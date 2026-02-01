@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Debug Panel</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+  <div class="container pagePadBottom">
+
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1>Debug Panel</h1>
+        <div class="small muted" style="margin-top:6px">BUILD_VERSION: <b>patch_kendala_01</b> • 2026-01-26 08:58</div>
+          <div class="small">Superadmin Only</div>
+        </div>
+        <button style="width:auto;margin:0" class="secondary" onclick="go('admin_panel.html')">Panel Admin</button>
+      </div>
+      <div id="nav"></div>
+    </div>
+
+    <div class="row" style="margin-top:12px">
+      <div class="card">
+        <div class="small">Realtime Status</div>
+        <div id="dbgConn" style="font-weight:950;margin-top:6px">Mengecek...</div>
+        <div class="small muted" id="dbgSync" style="margin-top:6px">-</div>
+      </div>
+      <div class="card">
+        <div class="small">Build Version</div>
+        <div id="dbgBuild" style="font-weight:950;margin-top:6px">-</div>
+        <div class="small muted" style="margin-top:6px">MesinKu Debug</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div style="font-weight:950">System Counters</div>
+      <div id="dbgCounts" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div style="font-weight:950">User Login Info</div>
+      <div id="dbgUser" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div style="font-weight:950">Quick Actions</div>
+      <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:10px">
+        <button class="secondary" onclick="debugRefresh()">Refresh Data</button>
+        <button class="secondary" onclick="clearLocalCache()">Clear Local Cache</button>
+        <button class="secondary" onclick="location.reload()">Reload App</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+
+    const u=getUser();
+    if(!u || u.role!=="superadmin"){
+      toast("Akses ditolak (Superadmin only)");
+      setTimeout(()=>go("index.html"), 900);
+    }
+
+    initDebugPanel();
+  </script>
+</body>
+</html>

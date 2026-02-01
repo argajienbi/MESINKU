@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Laporan Kendala</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+
+  <style>
+    /* ===== Layout Sticky Kendala OPEN + Scroll Table ===== */
+    .kendalaLayout{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      margin-top:12px;
+    }
+
+    /* Panel OPEN dibuat sticky (diam) */
+    .kendalaOpenSticky{
+      position: sticky;
+      top: 150px; /* ✅ kalau kurang pas, geser 170~230 */
+      z-index: 25;
+
+      background: rgba(10, 18, 38, 0.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Area bawah yang boleh scroll */
+    .kendalaScrollArea{
+      flex:1;
+      overflow:auto;
+      padding-bottom: 140px; /* biar aman dari sticky tombol bawah */
+    }
+
+    /* Sticky bottom actions blur */
+    .blurActions{
+      background: rgba(10, 18, 38, 0.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 18px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* tombol selesai biar rapi */
+    .btnKendalaDone{
+      width:auto;
+      white-space:nowrap;
+      padding:10px 14px;
+      border-radius:14px;
+      font-weight:800;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container pagePadBottom">
+
+    <!-- ===== Sticky Header ===== -->
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1>Laporan Kendala</h1>
+          <div class="small muted">Admin Excel-copyable</div>
+        </div>
+        <button style="width:auto;margin:0" class="secondary" onclick="go('index.html')">Home</button>
+      </div>
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+    </div>
+
+    <!-- ===== WRAP: Open Sticky + Scroll Report ===== -->
+    <div class="kendalaLayout">
+
+      <!-- ===== KENDALA OPEN TERBARU (STICKY / DIAM) ===== -->
+      <div class="card kendalaOpenSticky">
+        <div style="font-weight:850;margin-bottom:6px">📌 Kendala OPEN Terbaru</div>
+        <div id="kendalaOpenBox" class="small muted">Memuat...</div>
+      </div>
+
+      <!-- ===== SCROLL AREA ===== -->
+      <div class="kendalaScrollArea">
+
+        <!-- ===== TABLE EXCEL ===== -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:850;margin-bottom:4px">📄 Laporan Kendala (Mode Excel)</div>
+              <div class="small muted">Tips: klik Copy TSV → paste ke Excel/Google Sheets langsung jadi kolom.</div>
+            </div>
+            <button id="btnCopyTSV" class="secondary" style="width:auto">Copy Semua (TSV)</button>
+          </div>
+
+          <div style="margin-top:10px" class="table-wrap">
+            <table class="tbl" style="width:100%">
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>Mesin</th>
+                  <th>Kode</th>
+                  <th>Level</th>
+                  <th>Status</th>
+                  <th>User</th>
+                  <th>Lokasi</th>
+                  <th>Kendala</th>
+                </tr>
+              </thead>
+              <tbody id="kendalaTableBody">
+                <tr><td colspan="8" class="small muted">Memuat...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- RAW BOX -->
+          <textarea id="kendalaRawBox"
+            style="margin-top:12px;min-height:140px;display:none"
+            placeholder="Raw TSV akan muncul di sini..."></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== Sticky Bottom Actions ===== -->
+    <div class="stickyActions blurActions" style="margin-top:12px">
+      <div class="grid2">
+        <button id="btnToggleRaw" class="secondary">Toggle Raw</button>
+        <button id="btnSelectRaw" class="secondary">Select Raw</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Firebase + App -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+
+    if(!isAdminOrSuper()){
+      toast("Akses ditolak (Admin only)");
+      setTimeout(()=>go("index.html"), 800);
+    }
+
+    // ===== STATE =====
+    let kendalaRows = [];
+    const boxOpen = document.getElementById("kendalaOpenBox");
+    const tbody   = document.getElementById("kendalaTableBody");
+    const rawBox  = document.getElementById("kendalaRawBox");
+
+    // ===== HELPERS =====
+    function fmtTime(ms){
+      if(!ms) return "-";
+      try { return new Date(ms).toLocaleString("id-ID"); }
+      catch(e){ return "-"; }
+    }
+
+    function normalizeKendala(id, k){
+      k = k || {};
+      const mesin = k.machine_name || k.machineName || k.name || "-";
+      const code  = k.machine_id || k.machine_code || k.code || "-";
+      const level = String(k.level || k.issueLevel || "-").toUpperCase();
+      const status= String(k.status || "OPEN").toUpperCase();
+      const user  = k.createdByName || k.userName || k.currentUser || "-";
+      const lokasi= k.lokasi || k.location || "-";
+      const text  = k.kendala || k.pesan || k.issueText || "-";
+      const waktu = k.createdAt || k.time || k.at || 0;
+
+      return { id, waktu, mesin, code, level, status, user, lokasi, text };
+    }
+
+    async function doneKendala(top){
+      if(!top || !top.id) return;
+
+      if(!confirm("Selesaikan kendala ini? Status akan jadi DONE.")) return;
+
+      try{
+        await db.ref("kendala_reports/" + top.id).update({
+          status: "DONE",
+          doneAt: Date.now()
+        });
+
+        toast("✅ Kendala diselesaikan (DONE)");
+        loadHybrid();
+        return;
+      }catch(e1){
+        // fallback jalur lama
+        try{
+          await db.ref("kendala/" + top.id).update({
+            status: "DONE",
+            doneAt: Date.now()
+          });
+
+          toast("✅ Kendala diselesaikan (DONE)");
+          loadHybrid();
+          return;
+        }catch(e2){
+          console.log(e1, e2);
+          toast("❌ Gagal menyelesaikan kendala");
+        }
+      }
+    }
+
+    function renderOpenNewest(){
+      if(!boxOpen) return;
+
+      const open = kendalaRows.filter(x => x.status === "OPEN");
+
+      if(open.length === 0){
+        boxOpen.innerHTML = `<div class="small">✅ Tidak ada kendala OPEN.</div>`;
+        return;
+      }
+
+      const top = open[0];
+
+      boxOpen.innerHTML = `
+        <div class="list-item" style="margin-top:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div style="flex:1">
+              <div style="font-weight:850">
+                ${escapeHtml(top.mesin)}
+                <span class="pill" style="margin-left:8px">${escapeHtml(top.level)}</span>
+              </div>
+              <div class="small muted">${escapeHtml(top.code)} • OPEN</div>
+            </div>
+
+            <button id="btnDoneKendala"
+              class="secondary btnKendalaDone">
+              Selesaikan
+            </button>
+          </div>
+
+          <div class="small" style="margin-top:8px;white-space:pre-wrap">📍 ${escapeHtml(top.lokasi)}</div>
+          <div class="small" style="margin-top:6px;white-space:pre-wrap">🛠️ ${escapeHtml(top.text)}</div>
+          <div class="small muted" style="margin-top:6px">
+            ${escapeHtml(fmtTime(top.waktu))} • oleh ${escapeHtml(top.user)}
+          </div>
+        </div>
+      `;
+
+      const btn = document.getElementById("btnDoneKendala");
+      if(btn) btn.onclick = ()=>doneKendala(top);
+    }
+
+    function renderTable(){
+      if(!tbody) return;
+
+      if(kendalaRows.length === 0){
+        tbody.innerHTML = `<tr><td colspan="8" class="small muted">Tidak ada data kendala.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = kendalaRows.map(r=>`
+        <tr>
+          <td>${escapeHtml(fmtTime(r.waktu))}</td>
+          <td>${escapeHtml(r.mesin)}</td>
+          <td>${escapeHtml(r.code)}</td>
+          <td>${escapeHtml(r.level)}</td>
+          <td>${escapeHtml(r.status)}</td>
+          <td>${escapeHtml(r.user)}</td>
+          <td>${escapeHtml(r.lokasi)}</td>
+          <td style="white-space:pre-wrap">${escapeHtml(r.text)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function buildTSV(){
+      const header = ["Waktu","Mesin","Kode","Level","Status","User","Lokasi","Kendala"];
+      const lines = [header.join("\t")];
+
+      kendalaRows.forEach(r=>{
+        lines.push([
+          fmtTime(r.waktu),
+          r.mesin,
+          r.code,
+          r.level,
+          r.status,
+          r.user,
+          r.lokasi,
+          String(r.text||"").replace(/\n/g," ")
+        ].join("\t"));
+      });
+
+      return lines.join("\n");
+    }
+
+    function copyTSV(){
+      const tsv = buildTSV();
+      rawBox.value = tsv;
+
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(tsv).then(()=>{
+          toast("✅ Copy TSV berhasil");
+        }).catch(()=>{
+          toast("Copy gagal, gunakan Select Raw");
+        });
+      } else {
+        toast("Clipboard tidak tersedia, gunakan Select Raw");
+      }
+    }
+
+    function toggleRaw(){
+      rawBox.style.display = (rawBox.style.display === "none" ? "block" : "none");
+      rawBox.value = buildTSV();
+    }
+
+    function selectRaw(){
+      rawBox.style.display = "block";
+      rawBox.value = buildTSV();
+      rawBox.focus();
+      rawBox.select();
+      toast("✅ Raw diseleksi");
+    }
+
+    // ===== BUTTON BINDINGS =====
+    document.getElementById("btnCopyTSV").addEventListener("click", copyTSV);
+    document.getElementById("btnToggleRaw").addEventListener("click", toggleRaw);
+    document.getElementById("btnSelectRaw").addEventListener("click", selectRaw);
+
+    // ===== LOAD DATA (HYBRID PATH) =====
+    function loadFromPath(path){
+      return db.ref(path).limitToLast(500).once("value").then(snap=>{
+        const data = snap.val() || {};
+        return Object.entries(data).map(([id,v])=>normalizeKendala(id, v));
+      }).catch(()=>[]);
+    }
+
+    async function loadHybrid(){
+      let arr = await loadFromPath("kendala_reports");
+      if(arr.length === 0) arr = await loadFromPath("kendala");
+
+      arr.sort((a,b)=>(b.waktu||0)-(a.waktu||0));
+      kendalaRows = arr;
+
+      renderOpenNewest();
+      renderTable();
+
+      if(rawBox.style.display !== "none"){
+        rawBox.value = buildTSV();
+      }
+    }
+
+    loadHybrid();
+  </script>
+
+</body>
+</html>

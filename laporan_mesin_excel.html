@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>MesinKu - Laporan Mesin (Excel)</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+  <style>
+    .table-wrap{ overflow:auto; max-height: 520px; border-radius:14px; }
+    table.report{ width:100%; border-collapse:collapse; font-size:13px; }
+    table.report th, table.report td{ padding:10px; border-bottom:1px solid rgba(255,255,255,.08); vertical-align:top; }
+    table.report th{ position:sticky; top:0; background:rgba(10,20,40,.95); z-index:2; text-align:left; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+  </style>
+
+    <style>
+      .excelPageWrap{padding-bottom:110px;}
+      .bottomActions{
+        position:fixed;left:0;right:0;bottom:0;
+        padding:10px 12px;
+        background:rgba(7,12,22,.88);
+        backdrop-filter: blur(10px);
+        border-top:1px solid rgba(255,255,255,.08);
+        z-index:9999;
+      }
+      .bottomActionsInner{
+        max-width:980px;margin:0 auto;
+        display:flex;gap:12px;flex-wrap:wrap;
+      }
+      .bottomActionsInner button{flex:1;min-width:150px;}
+      /* Prevent weird selection overlay inside table */
+      .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch;}
+      table.tbl{border-collapse:separate;border-spacing:0;}
+    </style>
+    
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div>
+        <h1>Laporan Mesin (Excel)</h1>
+        <div class="small" id="broadcastText"></div>
+      </div>
+      <button style="width:auto;margin:0" class="secondary" onclick="go('index.html')">Home</button>
+    </div>
+
+    <div id="nav"></div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="toolbar">
+        <div>
+          <div style="font-weight:900">📄 Report (Copy ke Excel)</div>
+          <div class="small" style="opacity:.8;margin-top:4px">Gunakan tombol Copy TSV lalu paste ke Excel/Google Sheets.</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="secondary" style="width:auto" onclick="setRangeDays(1)">Hari Ini</button>
+          <button class="secondary" style="width:auto" onclick="setRangeDays(7)">7 Hari</button>
+          <button class="secondary" style="width:auto" onclick="setRangeDays(30)">30 Hari</button>
+          <button class="secondary" style="width:auto" onclick="copyMachineTSV()">Copy TSV</button>
+        </div>
+      </div>
+
+      <div class="small" id="rangeInfo" style="margin-top:10px;opacity:.85">Range: -</div>
+
+      <div class="table-wrap" style="margin-top:10px">
+        <table class="report" id="machineTable">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Mesin</th>
+              <th>Kode</th>
+              <th>User</th>
+              <th>Tujuan</th>
+              <th>Lokasi</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Durasi</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="machineTbody">
+            <tr><td colspan="10" class="small">Memuat...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <textarea id="machineRawTSV" class="input" style="margin-top:10px;min-height:120px;display:none" placeholder="Raw TSV..."></textarea>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="secondary" style="width:auto" onclick="toggleMachineRaw()">Toggle Raw</button>
+        <button class="secondary" style="width:auto" onclick="selectMachineRaw()">Select Raw</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/laporan_mesin_excel.js"></script>
+
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+    loadBroadcast();
+    initLaporanMesinExcel();
+  </script>
+
+  <div id="machineBottomBar" class="card" style="position:fixed;left:12px;right:12px;bottom:12px;z-index:50;padding:10px;display:flex;gap:10px;justify-content:space-between;align-items:center">
+    <button id="btnToggleRawFixed" class="secondary" style="flex:1;width:auto">Toggle Raw</button>
+    <button id="btnSelectRawFixed" class="secondary" style="flex:1;width:auto">Select Raw</button>
+  </div>
+
+</body>
+</html>

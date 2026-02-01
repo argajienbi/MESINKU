@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Profil</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+  <div class="container">
+    <div class="sticky-top">
+<div class="topbar">
+      <div>
+        <h1>Profil</h1>
+        <div class="small" id="broadcastText"></div>
+      </div>
+      <button style="width:auto;margin:0" class="secondary" onclick="go('index.html')">Home</button>
+    </div>
+
+    <div id="nav"></div>
+</div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="small">Nama</div>
+      <div id="pName" style="font-weight:750;margin-top:6px"></div>
+      <div class="small" style="margin-top:10px">Email</div>
+      <div id="pEmail" style="font-weight:750;margin-top:6px"></div>
+      <div class="small" style="margin-top:10px">Gedung</div>
+      <div id="pGedung" style="font-weight:750;margin-top:6px"></div>
+      <div class="small" style="margin-top:10px">Role</div>
+      <div id="pRole" style="font-weight:750;margin-top:6px"></div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+    loadBroadcast();
+
+    const u=getUser();
+    document.getElementById("pName").textContent = u.name;
+    document.getElementById("pEmail").textContent = u.email;
+    document.getElementById("pGedung").textContent = u.gedung;
+    document.getElementById("pRole").textContent = u.role;
+  </script>
+</body>
+</html>

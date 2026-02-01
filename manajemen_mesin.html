@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Manajemen Mesin</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+
+<div class="container pagePadBottom">
+
+  <!-- ===== HEADER ===== -->
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>Manajemen Mesin</h1>
+        <div class="small muted">Admin / Superadmin</div>
+      </div>
+      <button class="secondary" style="width:auto" onclick="go('index.html')">
+        Home
+      </button>
+    </div>
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- FILTER & DAFTAR MESIN -->
+  <!-- ========================= -->
+  <div class="card" style="margin-top:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:900;font-size:16px">
+        📋 Daftar Mesin
+      </div>
+      <div class="small muted" id="machineCount">-</div>
+    </div>
+
+    <!-- SEARCH -->
+    <input
+      id="mSearch"
+      placeholder="🔍 Cari mesin (nama / kode / group)…"
+      style="margin-top:12px"
+    />
+
+    <!-- FILTER -->
+    <div style="
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px
+    ">
+      <select id="mFilterStatus">
+        <option value="all">Semua Status</option>
+        <option value="available">Available</option>
+        <option value="in_use">In Use</option>
+      </select>
+
+      <select id="mFilterActive">
+        <option value="all">Semua Aktivasi</option>
+        <option value="true">Aktif</option>
+        <option value="false">Nonaktif</option>
+      </select>
+    </div>
+
+    <!-- LIST -->
+    <div
+      id="machineList"
+      style="
+        margin-top:14px;
+        max-height:420px;
+        overflow:auto;
+        padding-right:6px
+      "
+    ></div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- FORM TAMBAH / EDIT -->
+  <!-- ========================= -->
+  <div class="card" style="margin-top:14px">
+    <div style="font-weight:900;font-size:16px">
+      ✏️ Tambah / Edit Mesin
+    </div>
+    <div class="small muted" style="margin-top:4px">
+      ID mesin adalah key di <b>/machines/{id}</b>
+    </div>
+
+    <div style="margin-top:10px">
+      <input id="machineId" placeholder="ID Mesin (contoh: BLW-A1)"/>
+      <input id="machineName" placeholder="Nama Mesin"/>
+      <input id="machineCode" placeholder="Kode Mesin"/>
+      <input id="machineGroup" placeholder="Group / Gedung"/>
+    </div>
+
+    <div style="
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:14px
+    ">
+      <button id="btnSaveMachine">
+        💾 Simpan Mesin
+      </button>
+      <button class="secondary" id="btnClearMachine">
+        ✖ Clear Form
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+
+<script>
+  requireLogin();
+  setOnlinePresence();
+  navbar();
+
+  if(!isAdminOrSuper()){
+    toast("Akses ditolak");
+    setTimeout(()=>go("index.html"), 800);
+  }
+
+  initManageMachines();
+</script>
+
+</body>
+</html>

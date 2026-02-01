@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin – Patch Settings</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+<div class="container pagePadBottom">
+
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>Patch Update</h1>
+        <div class="small muted">Popup sebelum login</div>
+      </div>
+      <button class="secondary" onclick="go('admin.html')">Kembali</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">Pengaturan Patch</div>
+
+    <label class="small">Aktifkan Patch</label>
+    <select id="p_enabled">
+      <option value="true">Aktif</option>
+      <option value="false">Nonaktif</option>
+    </select>
+
+    <label class="small">Tipe</label>
+    <select id="p_type">
+      <option value="info">Info</option>
+      <option value="warning">Warning</option>
+      <option value="force">Force (blok login)</option>
+    </select>
+
+    <input id="p_version" placeholder="Versi (contoh: 2.1.0)"/>
+    <input id="p_title" placeholder="Judul Patch"/>
+    <textarea id="p_message" placeholder="Isi patch (boleh HTML)"></textarea>
+
+    <input id="p_action_text" placeholder="Teks Tombol (opsional)"/>
+    <input id="p_action_url" placeholder="Link Download (opsional)"/>
+
+    <button onclick="savePatch()">💾 Simpan Patch</button>
+    <button class="secondary" onclick="previewPatch()">👁️ Preview</button>
+  </div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/patch_gate.js"></script>
+
+<script>
+requireLogin();
+navbar();
+
+const ref = db.ref("patch_gate");
+
+ref.on("value", s=>{
+  const d=s.val()||{};
+  p_enabled.value = d.enabled!==false ? "true":"false";
+  p_type.value = d.type||"info";
+  p_version.value = d.version||"";
+  p_title.value = d.title||"";
+  p_message.value = d.message||"";
+  p_action_text.value = d.actionText||"";
+  p_action_url.value = d.actionUrl||"";
+});
+
+function collect(){
+  return {
+    enabled: p_enabled.value==="true",
+    type: p_type.value,
+    version: p_version.value,
+    title: p_title.value,
+    message: p_message.value,
+    actionText: p_action_text.value,
+    actionUrl: p_action_url.value,
+    updatedAt: Date.now()
+  };
+}
+
+function savePatch(){
+  const data = collect();
+  ref.set(data).then(()=>{
+    db.ref("patch_history").push({
+      ...data,
+      savedAt: Date.now(),
+      savedBy: getUser().uid
+    });
+    toast("Patch disimpan ✅");
+  });
+}
+
+function previewPatch(){
+  initPatchGate({ preview:true, data: collect() });
+}
+</script>
+
+</body>
+</html>

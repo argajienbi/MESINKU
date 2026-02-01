@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Patch Dashboard</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+<div class="container pagePadBottom">
+
+  <!-- ===== HEADER ===== -->
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>🧩 Patch Dashboard</h1>
+        <div class="small muted">Monitoring update sebelum login</div>
+      </div>
+      <button class="secondary" onclick="go('admin_panel.html')">Kembali</button>
+    </div>
+    <div id="nav"></div>
+  </div>
+
+  <!-- ===== PATCH INFO ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">Patch Aktif</div>
+    <div id="patchInfo" class="small muted" style="margin-top:8px">Memuat…</div>
+  </div>
+
+  <!-- ===== SUMMARY ===== -->
+  <div class="row" style="margin-top:12px">
+    <div class="card">
+      <div class="small muted">Total User</div>
+      <div id="totalUsers" style="font-size:20px;font-weight:900">-</div>
+    </div>
+    <div class="card">
+      <div class="small muted">Sudah Lihat</div>
+      <div id="totalSeen" style="font-size:20px;font-weight:900">-</div>
+    </div>
+    <div class="card">
+      <div class="small muted">Belum Lihat</div>
+      <div id="totalUnseen" style="font-size:20px;font-weight:900">-</div>
+    </div>
+  </div>
+
+<button class="secondary" style="margin-top:10px" onclick="remindUnseen()">
+  🔔 Ingatkan semua yang belum lihat
+</button>
+
+  <!-- ===== LIST SUDAH LIHAT ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">👁️ Sudah Melihat Patch</div>
+    <div id="seenList" class="small muted" style="margin-top:10px">-</div>
+  </div>
+
+  <!-- ===== LIST BELUM LIHAT ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">⏳ Belum Melihat Patch</div>
+    <div id="unseenList" class="small muted" style="margin-top:10px">-</div>
+  </div>
+
+</div>
+
+<!-- ===== FIREBASE ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+
+<script>
+requireLogin();
+navbar();
+
+if (!isAdminOrSuper()) {
+  toast("Akses ditolak");
+  setTimeout(()=>go("index.html"),800);
+}
+
+const patchInfo   = document.getElementById("patchInfo");
+const seenList    = document.getElementById("seenList");
+const unseenList  = document.getElementById("unseenList");
+
+const totalUsers  = document.getElementById("totalUsers");
+const totalSeen   = document.getElementById("totalSeen");
+const totalUnseen = document.getElementById("totalUnseen");
+
+let PATCH_ID = null;
+
+/* ===============================
+   LOAD PATCH INFO
+================================ */
+db.ref("patch_gate").once("value").then(snap=>{
+  const p = snap.val();
+  if(!p || !p.enabled){
+    patchInfo.innerHTML = "❌ Tidak ada patch aktif";
+    return;
+  }
+
+  PATCH_ID = p.id;
+
+  patchInfo.innerHTML = `
+    <b>${p.title}</b><br/>
+    Versi: ${p.version}<br/>
+    Mode: <b>${p.type}</b>
+  `;
+
+  loadUsersAndViews();
+});
+
+/* ===============================
+   LOAD USERS + VIEWS
+================================ */
+function loadUsersAndViews(){
+  Promise.all([
+    db.ref("users").once("value"),
+    db.ref("patch_gate_views/"+PATCH_ID).once("value")
+  ]).then(([usersSnap, viewsSnap])=>{
+    const users = usersSnap.val() || {};
+    const views = viewsSnap.val() || {};
+
+    const userList = Object.entries(users).map(([uid,u])=>({
+      uid,
+      name: u.name || "-",
+      email: u.email || "-",
+      role: u.role || "crew"
+    }));
+
+    const seenUIDs = Object.keys(views);
+
+    const seen = [];
+    const unseen = [];
+
+    userList.forEach(u=>{
+      if(seenUIDs.includes(u.uid)){
+        seen.push({
+          ...u,
+          seenAt: views[u.uid].seenAt
+        });
+      } else {
+        unseen.push(u);
+      }
+    });
+
+    totalUsers.textContent  = userList.length;
+    totalSeen.textContent   = seen.length;
+    totalUnseen.textContent = unseen.length;
+
+    renderSeen(seen);
+    renderUnseen(unseen);
+  });
+}
+
+/* ===============================
+   RENDER LIST
+================================ */
+function renderSeen(list){
+  if(!list.length){
+    seenList.innerHTML = "Belum ada yang melihat.";
+    return;
+  }
+
+  seenList.innerHTML = list.map(u=>`
+    <div class="list-item">
+      <b>${u.name}</b> (${u.role})<br/>
+      <span class="small muted">${u.email}</span><br/>
+      <span class="small muted">
+        Dilihat: ${new Date(u.seenAt).toLocaleString()}
+      </span>
+    </div>
+  `).join("");
+}
+
+function renderUnseen(list){
+  if(!list.length){
+    unseenList.innerHTML = "🎉 Semua user sudah melihat.";
+    return;
+  }
+
+  unseenList.innerHTML = list.map(u=>`
+    <div class="list-item">
+      <b>${u.name}</b> (${u.role})<br/>
+      <span class="small muted">${u.email}</span>
+    </div>
+  `).join("");
+}
+</script>
+<script>
+function remindUnseen(){
+  if(!PATCH_ID){
+    toast("Patch belum aktif");
+    return;
+  }
+
+  Promise.all([
+    db.ref("users").once("value"),
+    db.ref("patch_gate_views/"+PATCH_ID).once("value")
+  ]).then(([uSnap, vSnap])=>{
+    const users = uSnap.val() || {};
+    const views = vSnap.val() || {};
+
+    const updates = {};
+    let count = 0;
+
+    Object.keys(users).forEach(uid=>{
+      if(!views[uid]){
+        updates[uid] = true;
+        count++;
+      }
+    });
+
+    if(!count){
+      toast("Semua user sudah lihat");
+      return;
+    }
+
+    db.ref("patch_gate_remind/"+PATCH_ID).set(updates)
+      .then(()=> toast(`🔔 ${count} user ditandai untuk diingatkan`));
+  });
+}
+</script>
+</body>
+</html>

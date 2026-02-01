@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Chat Broadcast</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="container">
+  <div class="topbar">
+    <div>
+      <h1>Chat Broadcast</h1>
+      <div id="chatStatus" class="small muted"></div>
+    </div>
+    <button class="secondary" style="width:auto" onclick="go('index.html')">
+      Home
+    </button>
+  </div>
+
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+</div>
+
+<!-- ===== CHAT LIST ===== -->
+<div class="container">
+      <div class="card" style="margin-top:12px">
+  <div id="notifList" class="chatScroll"></div>
+</div>
+</div>
+
+<!-- ===== REPLY PREVIEW ===== -->
+<div id="replyPreview" class="replyPreview" style="display:none"></div>
+
+<!-- ===== CHAT INPUT (FIXED) ===== -->
+<div class="chat-input-simple">
+  <input
+    id="chatMsg"
+    placeholder="Ketik pesan…"
+    autocomplete="off"
+  />
+  <button id="btnChatSend">➤</button>
+</div>
+
+<!-- ===== FIREBASE ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/nav_badge_sound.js"></script>
+<script src="assets/js/ui_global.js"></script>
+<script src="assets/js/chat_broadcast.js"></script>
+
+<script>
+  requireLogin();
+  navbar();
+  initChatBroadcast();
+
+  const chatMsg = document.getElementById("chatMsg");
+  const btnChatSend = document.getElementById("btnChatSend");
+
+  function sendChat(){
+    sendChatBroadcastMessage(chatMsg.value);
+    chatMsg.value = "";
+  }
+
+  btnChatSend.onclick = sendChat;
+  chatMsg.addEventListener("keydown", e=>{
+    if(e.key==="Enter"){
+      e.preventDefault();
+      sendChat();
+    }
+  });
+</script>
+
+<style>
+/* ===== CHAT SCROLL ===== */
+.chatScroll{
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+
+/* ===== INPUT FIXED ===== */
+.chat-input-simple{
+  position: fixed;
+  bottom: 16px;
+  left: 0;
+  right: 0;
+
+  display:flex;
+  gap:10px;
+  align-items:center;
+
+  margin: 0 12px;
+  padding: 10px 12px;
+
+  background: rgba(11,18,32,.97);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:16px;
+  z-index:1000;
+}
+
+/* ===== REPLY PREVIEW ===== */
+.replyPreview{
+  position: fixed;
+  bottom: 76px;
+  left: 0;
+  right: 0;
+  margin: 0 12px;
+
+  background:#0b1220;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:8px 12px;
+  z-index:999;
+}
+.replyPreview button{
+  margin-top:6px;
+  width:auto;
+  padding:6px 10px;
+}
+</style>
+
+</body>
+</html>

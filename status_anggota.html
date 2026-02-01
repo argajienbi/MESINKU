@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Status Anggota</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+
+  <style>
+    /* ✅ efek abu-abu untuk user hidden (superadmin only) */
+    .userHiddenRow{
+      opacity: .45;
+      filter: grayscale(1);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1>Status Anggota</h1>
+          <div class="small">Semua anggota + status online/offline realtime</div>
+          <div class="small" style="opacity:.85;margin-top:4px">
+            Tip: sentuh anggota untuk lihat detail & chat WhatsApp 📲
+          </div>
+        </div>
+        <button style="width:auto;margin:0" class="secondary" onclick="go('index.html')">Home</button>
+      </div>
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <input id="q" placeholder="Cari nama / gedung / role / status..." />
+      <div class="small" id="count" style="margin-top:8px;opacity:.85">Memuat...</div>
+      <div id="list" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+<script src="assets/js/feature_loader.js"></script>
+
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+
+    const q = document.getElementById("q");
+    const box = document.getElementById("list");
+    const countEl = document.getElementById("count");
+
+    let usersMap = {};
+    let onlineMap = {};
+
+    function isSuperAdminOnly(){
+      const u = getUser() || {};
+      return u.role === "superadmin";
+    }
+
+    function fmtTime(ts){
+      if(!ts) return "-";
+      try { return new Date(ts).toLocaleString("id-ID"); }
+      catch(e){ return "-"; }
+    }
+
+    function isOnline(lastSeen){
+      return lastSeen && (Date.now() - lastSeen) < 60000;
+    }
+
+    function isHiddenUser(u){
+      return !!(u && u.hidden === true);
+    }
+
+    function normalizeUser(uid){
+      const u = usersMap[uid] || {};
+      const o = onlineMap[uid] || {};
+
+      const last = o.last_seen || o.lastSeen || 0;
+
+      const name =
+        u.name || u.username ||
+        o.name || o.username ||
+        u.email || o.email ||
+        uid;
+
+      const gedung =
+        u.gedung || u.building ||
+        o.gedung || o.building ||
+        "-";
+
+      const role = u.role || o.role || "crew";
+
+      const status = isOnline(last) ? "online" : "offline";
+
+      return {
+        uid,
+        name,
+        gedung,
+        role,
+        last,
+        status,
+        hidden: isHiddenUser(u)
+      };
+    }
+
+    function render(){
+      const term = (q.value || "").trim().toLowerCase();
+      const superMode = isSuperAdminOnly();
+
+      // build list dari usersMap
+      let users = Object.keys(usersMap).map(uid => normalizeUser(uid));
+
+      // ✅ filter hidden:
+      // - user biasa/admin: hidden dibuang
+      // - superadmin: hidden tetap tampil tapi abu-abu
+      if(!superMode){
+        users = users.filter(x => !x.hidden);
+      }
+
+      // sort: online dulu, lalu nama
+      users.sort((a,b)=>{
+        if(a.status !== b.status) return a.status === "online" ? -1 : 1;
+        return String(a.name||"").localeCompare(String(b.name||""));
+      });
+
+      // search filter
+      const filtered = users.filter(x=>{
+        const hay = [x.name, x.gedung, x.role, x.status].join(" ").toLowerCase();
+        return !term || hay.includes(term);
+      });
+
+      countEl.textContent = filtered.length + " anggota";
+
+      if(filtered.length === 0){
+        box.innerHTML = `<div class="small">Tidak ada anggota cocok.</div>`;
+        return;
+      }
+
+      box.innerHTML = filtered.map(x=>{
+        const badge = x.status === "online"
+          ? `<span class="badge ok">online</span>`
+          : `<span class="badge">offline</span>`;
+
+        const hiddenBadge = x.hidden
+          ? `<span class="badge" style="background:#444;opacity:.9">hidden</span>`
+          : "";
+
+        const rowClass = (superMode && x.hidden) ? "userHiddenRow" : "";
+
+        // ✅ tombol hide/show hanya superadmin
+        const superBtns = superMode ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button class="secondary" style="width:auto;padding:10px 12px"
+              onclick="event.stopPropagation(); toggleHideUser('${x.uid}')">
+              ${x.hidden ? "Show" : "Hide"}
+            </button>
+          </div>
+        ` : "";
+
+        return `
+          <div class="list-item ${rowClass}" style="margin:10px 0;cursor:pointer" onclick="openUserDetail('${x.uid}')">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+              <div style="font-weight:900">${escapeHtml(String(x.name||"-"))}</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                ${superMode ? hiddenBadge : ""}
+                ${badge}
+              </div>
+            </div>
+
+            <div class="small" style="margin-top:4px;opacity:.9">
+              ${escapeHtml(String(x.gedung||"-"))} • ${escapeHtml(String(x.role||"crew"))}
+            </div>
+
+            <div class="small" style="margin-top:4px;opacity:.85">
+              Last seen: ${escapeHtml(fmtTime(x.last))}
+            </div>
+
+            ${superBtns}
+          </div>
+        `;
+      }).join("");
+    }
+
+    // realtime
+    db.ref("users").on("value", snap=>{
+      usersMap = snap.val() || {};
+      render();
+    });
+
+    db.ref("users_online").on("value", snap=>{
+      onlineMap = snap.val() || {};
+      render();
+    });
+
+    q.addEventListener("input", render);
+    setInterval(render, 5000);
+
+    // ===== DETAIL USER CLICK =====
+    window.openUserDetail = function(uid){
+      try{
+        const u = (usersMap && usersMap[uid]) ? usersMap[uid] : {};
+        const o = (onlineMap && onlineMap[uid]) ? onlineMap[uid] : {};
+
+        const name = u.name || u.username || o.name || o.username || u.email || uid;
+        const gedung = u.gedung || u.building || o.gedung || o.building || "-";
+        const role = u.role || o.role || "crew";
+        const wa = u.wa || u.whatsapp || u.phone || "";
+
+        let msg =
+          `Nama: ${name}\n` +
+          `Gedung: ${gedung}\n` +
+          `Role: ${role}\n`;
+
+        if(wa){
+          msg += `WhatsApp: ${wa}\n\nBuka chat WhatsApp?`;
+          const ok = confirm(msg);
+          if(ok){
+            const num = String(wa).replace(/[^0-9]/g,"");
+            window.open(`https://wa.me/${num}`, "_blank");
+          }
+        } else {
+          alert(msg + "\n\nNomor WA belum diisi di data user.");
+        }
+      }catch(e){
+        console.error(e);
+        toast("Gagal buka detail: " + e.message);
+      }
+    };
+
+    // ===== SUPERADMIN: TOGGLE HIDE/SHOW =====
+    window.toggleHideUser = async function(uid){
+      try{
+        const u = getUser() || {};
+        if(u.role !== "superadmin"){
+          toast("Superadmin only ❌");
+          return;
+        }
+
+        const cur = (usersMap && usersMap[uid]) ? usersMap[uid] : {};
+        const nextHidden = !(cur.hidden === true);
+
+        const ok = confirm(
+          nextHidden
+            ? "Sembunyikan anggota ini dari menu Status Anggota?"
+            : "Tampilkan kembali anggota ini di menu Status Anggota?"
+        );
+        if(!ok) return;
+
+        await db.ref("users/"+uid+"/hidden").set(nextHidden);
+        toast(nextHidden ? "✅ Anggota di-hide" : "✅ Anggota di-show");
+      }catch(e){
+        console.error(e);
+        toast("Gagal: " + e.message);
+      }
+    };
+  </script>
+</body>
+</html>

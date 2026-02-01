@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Login</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <h1 class="auth-title">Masuk MesinKu</h1>
+    <div class="auth-sub">Login untuk mulai tracking mesin & cek status realtime.</div>
+
+    <div class="auth-form">
+      <div class="small" style="margin-top:14px">Email</div>
+      <input id="email" type="email" placeholder="contoh: nama@email.com" autocomplete="email"/>
+
+      <div class="small" style="margin-top:10px">Password</div>
+      <div class="pw-row">
+        <input id="password" type="password" placeholder="Masukkan password" autocomplete="current-password"/>
+        <button class="secondary pw-toggle" type="button"
+          onclick="togglePw('password', this)">👁️</button>
+      </div>
+
+      <div class="auth-actions">
+        <button id="btnLogin">Login</button>
+        <button class="secondary" type="button" onclick="go('register.html')">Daftar</button>
+      </div>
+
+      <div class="auth-links">
+        <a href="#" onclick="forgotPasswordUI();return false;">Lupa password?</a>
+        <span class="small" style="opacity:.6">v2</span>
+      </div>
+
+      <div class="auth-note">
+        Tips: Pastikan email aktif karena dipakai untuk reset password.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FIREBASE ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<script src="assets/js/firebase.js"></script>
+
+<!-- 🔥 PATCH GATE (SEBELUM LOGIN) -->
+<script src="assets/js/patch_gate.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+  // patch check even before login
+  initPatchGate();
+</script>
+
+
+<script>
+function togglePw(id, btn){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const show = el.type === "password";
+  el.type = show ? "text" : "password";
+  btn.textContent = show ? "🙈" : "👁️";
+}
+
+function forgotPasswordUI(){
+  const email = (document.getElementById("email").value || "").trim();
+  if(!email){ alert("Isi email dulu"); return; }
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(()=> alert("Link reset dikirim ke " + email))
+    .catch(e=> alert("Gagal: " + e.message));
+}
+
+document.getElementById("btnLogin").onclick = async ()=>{
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  if(!email || !password){ toast("Isi email & password"); return; }
+
+  try{
+    const cred = await auth.signInWithEmailAndPassword(email, password);
+    const uid = cred.user.uid;
+
+    const snap = await db.ref("users/"+uid).once("value");
+    let profile = snap.val();
+
+    if(!profile){
+      profile = {
+        uid,
+        name: email.split("@")[0],
+        email,
+        gedung: "A",
+        role: "crew"
+      };
+      await db.ref("users/"+uid).set(profile);
+    }
+
+    setUser(profile);
+    await seedMachinesIfEmpty();
+    setOnlinePresence();
+
+    toast("Login sukses ✅");
+    setTimeout(()=>go("index.html"), 500);
+  }catch(e){
+    toast("Login gagal: " + e.message);
+  }
+};
+</script>
+
+</body>
+</html>

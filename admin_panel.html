@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Panel Admin</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+<div class="container pagePadBottom">
+
+  <!-- ===== HEADER ===== -->
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>Panel Admin</h1>
+        <div class="small muted">Akses Admin & Superadmin</div>
+      </div>
+      <button class="secondary" style="width:auto" onclick="go('index.html')">Home</button>
+    </div>
+    <div id="nav"></div>
+  </div>
+
+  <!-- ============================= -->
+  <!-- SETTING CHAT & BROADCAST -->
+  <!-- ============================= -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">Setting Chat & Broadcast</div>
+    <div class="stack gap12" style="margin-top:12px">
+      <button onclick="go('admin_notif.html')">📢 Broadcast</button>
+      <button onclick="go('pesan.html')">⚡ Pesan Running</button>
+      <button onclick="go('chat_broadcast.html')">💬 Chat Broadcast</button>
+    </div>
+  </div>
+
+  <!-- ============================= -->
+  <!-- SETTING ANGGOTA & MESIN -->
+  <!-- ============================= -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">Setting Anggota & Mesin</div>
+    <div class="stack gap12" style="margin-top:12px">
+      <button onclick="go('manajemen_anggota.html')">👥 Manage Anggota</button>
+      <button onclick="go('manajemen_mesin.html')">🛠️ Manage Mesin</button>
+    </div>
+  </div>
+
+  <!-- ============================= -->
+  <!-- LAPORAN -->
+  <!-- ============================= -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">Laporan</div>
+    <div class="stack gap12" style="margin-top:12px">
+      <button onclick="go('laporan.html')">📄 Laporan Mesin</button>
+      <button onclick="go('laporan_mesin_excel.html')">📊 Laporan Excel</button>
+      <button onclick="go('laporan_kendala_admin.html')">🧾 Laporan Kendala</button>
+    </div>
+  </div>
+
+  <!-- ============================= -->
+  <!-- ⚙ SETTING UI & APP CONFIG -->
+  <!-- ============================= -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">⚙ Pengaturan Aplikasi</div>
+    <div class="small muted" style="margin-top:6px">
+      Pengaturan global aplikasi (RTDB & runtime)
+    </div>
+
+    <div class="stack gap12" style="margin-top:12px">
+      <button onclick="go('admin_ui_settings.html')">
+        🎨 Setting UI Aplikasi
+      </button>
+
+      <button onclick="go('admin_chat_settings.html')">
+        💬 Setting Chat Broadcast
+      </button>
+
+      <button onclick="go('settings_input_json.html')">
+        🧾 Input JSON Global
+      </button>
+
+      <button onclick="go('admin_patch_settings.html')">
+        🧩 Patch Update (Before Login)
+      </button>
+
+      <button class="secondary" onclick="previewPatch()">
+        👁️ Preview Patch
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================= -->
+  <!-- RESET & DEBUG -->
+  <!-- ============================= -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">Reset & Debug</div>
+    <div class="stack gap12" style="margin-top:12px">
+      <button class="secondary" onclick="go('tools_reset.html')">Tools Reset</button>
+      <button class="secondary" onclick="go('debug.html')">Debug Panel</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== FIREBASE ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<!-- ===== CORE ===== -->
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+
+<!-- ===== PATCH GATE ===== -->
+<script src="assets/js/patch_gate.js"></script>
+
+<script>
+requireLogin();
+setOnlinePresence();
+navbar();
+
+if(!isAdminOrSuper()){
+  toast("Akses ditolak");
+  setTimeout(()=>go("index.html"), 800);
+}
+
+function previewPatch(cfg){
+  sessionStorage.setItem("patch_preview", JSON.stringify(cfg));
+  window.open("login.html", "_blank");
+}
+</script>
+
+</body>
+</html>

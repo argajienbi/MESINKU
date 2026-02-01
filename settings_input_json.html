@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Global UI Settings (JSON)</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+
+<div class="container pagePadBottom">
+
+  <!-- ===== HEADER ===== -->
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>Global UI Settings</h1>
+        <div class="small muted">Input JSON • Realtime • Aman</div>
+      </div>
+      <button class="secondary" style="width:auto" onclick="go('admin_panel.html')">
+        Panel Admin
+      </button>
+    </div>
+    <div id="nav"></div>
+  </div>
+
+  <!-- ===== INFO ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">Cara Pakai</div>
+    <div class="small muted" style="margin-top:6px;line-height:1.5">
+      • Edit JSON di bawah<br>
+      • Klik <b>Simpan</b><br>
+      • Semua halaman langsung update (realtime)<br>
+      • Jika error → JSON otomatis ditolak
+    </div>
+  </div>
+
+  <!-- ===== JSON INPUT ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">UI Config (JSON)</div>
+
+    <textarea
+      id="jsonInput"
+      spellcheck="false"
+      style="
+        margin-top:10px;
+        min-height:320px;
+        font-family:monospace;
+        font-size:13px;
+        line-height:1.45;
+      "
+    ></textarea>
+
+    <div class="rowActions">
+      <button onclick="saveUI()">💾 Simpan</button>
+      <button class="secondary" onclick="loadUI()">↺ Reload dari Database</button>
+      <button class="secondary" onclick="loadDefault()">⚙ Default</button>
+    </div>
+
+    <div class="small muted" id="statusText" style="margin-top:10px"></div>
+  </div>
+
+</div>
+
+<!-- ===== FIREBASE ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+
+<script>
+/* =========================
+   INIT
+========================= */
+requireLogin();
+navbar();
+
+if(!isAdminOrSuper()){
+  toast("Admin only");
+  setTimeout(()=>go("index.html"), 800);
+}
+
+/* =========================
+   DEFAULT JSON
+========================= */
+const DEFAULT_UI = {
+  enabled: true,
+  theme: {
+    bg: "#0b1220",
+    card: "#0f1b33",
+    card2: "#0f2143",
+    text: "#e8eefc",
+    muted: "#9fb0d0",
+    accent: "#3b82f6",
+    danger: "#ef4444",
+    ok: "#22c55e"
+  },
+  radius: 16,
+  spacing: 12,
+  fontSize: 14,
+  dense: false,
+  blur: true,
+  animation: true
+};
+
+const jsonInput = document.getElementById("jsonInput");
+const statusText = document.getElementById("statusText");
+
+/* =========================
+   LOAD
+========================= */
+function loadUI(){
+  statusText.textContent = "Memuat dari database...";
+  db.ref("ui_global").once("value").then(snap=>{
+    const data = snap.val();
+    if(!data){
+      jsonInput.value = JSON.stringify(DEFAULT_UI, null, 2);
+      statusText.textContent = "Belum ada data, pakai default";
+      return;
+    }
+    jsonInput.value = JSON.stringify(data, null, 2);
+    statusText.textContent = "Data dimuat dari database";
+  });
+}
+
+function loadDefault(){
+  jsonInput.value = JSON.stringify(DEFAULT_UI, null, 2);
+  statusText.textContent = "Default dimuat (belum disimpan)";
+}
+
+/* =========================
+   SAVE
+========================= */
+function saveUI(){
+  const raw = jsonInput.value.trim();
+  if(!raw){
+    toast("JSON kosong");
+    return;
+  }
+
+  let data;
+  try{
+    data = JSON.parse(raw);
+  }catch(e){
+    toast("❌ JSON tidak valid");
+    return;
+  }
+
+  if(typeof data !== "object"){
+    toast("❌ Format JSON salah");
+    return;
+  }
+
+  db.ref("ui_global").set(data)
+    .then(()=>{
+      toast("✅ UI disimpan");
+      statusText.textContent = "Terakhir disimpan: " + new Date().toLocaleString();
+    })
+    .catch(e=>{
+      toast("Gagal simpan");
+      console.error(e);
+    });
+}
+
+/* auto load */
+loadUI();
+</script>
+
+</body>
+</html>

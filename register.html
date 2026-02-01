@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang='id'>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Register</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+  <div class="auth-wrap">
+    <div class="card auth-card">
+      <h1 class="auth-title">Daftar MesinKu</h1>
+      <div class="auth-sub">Buat akun untuk mulai pakai mesin dan update status realtime.</div>
+
+      <div class="auth-form">
+        <div class="small" style="margin-top:14px">Nama</div>
+        <input id="name" placeholder="Nama kamu" autocomplete="name"/>
+
+        <div class="small" style="margin-top:10px">Gedung</div>
+        <select id="gedung">
+          <option value="A">Gedung A</option>
+          <option value="B">Gedung B</option>
+          <option value="DOME">Dome</option>
+        </select>
+
+        <div class="small" style="margin-top:10px">No WhatsApp Aktif</div>
+        <input id="wa" placeholder="contoh: 6281234567890" inputmode="numeric"/>
+
+        <div class="small" style="margin-top:10px">Email aktif</div>
+        <input id="email" type="email" placeholder="contoh: nama@email.com" autocomplete="email"/>
+
+        <div class="small" style="margin-top:10px">Password</div>
+        <div class="pw-row">
+          <input id="password" type="password" placeholder="Buat password" autocomplete="new-password"/>
+          <button class="secondary pw-toggle" type="button" onclick="togglePw('password', this)">👁️</button>
+        </div>
+
+        <div class="small" style="margin-top:10px">Konfirmasi Password</div>
+        <div class="pw-row">
+          <input id="pw2" type="password" placeholder="Ulangi password" autocomplete="new-password"/>
+          <button class="secondary pw-toggle" type="button" onclick="togglePw('pw2', this)">👁️</button>
+        </div>
+
+        <div class="auth-actions">
+          <button id="btnRegister">Daftar</button>
+          <button class="secondary" type="button" onclick="go('login.html')">Kembali</button>
+        </div>
+
+        <div class="auth-note">
+          Nomor WA dipakai untuk hubungi kamu saat sedang pakai mesin.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function togglePw(id, btn){
+      const el = document.getElementById(id);
+      if(!el) return;
+      const isPw = el.type === "password";
+      el.type = isPw ? "text" : "password";
+      btn.textContent = isPw ? "🙈" : "👁️";
+    }
+  </script>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script>
+    document.getElementById("btnRegister").onclick = async ()=>{
+      const name=document.getElementById("name").value.trim();
+      const wa=(document.getElementById("wa")?.value||"").trim();
+      const gedung=document.getElementById("gedung").value;
+      const email=document.getElementById("email").value.trim();
+      const p1=document.getElementById("password").value;
+      const p2=document.getElementById("pw2").value;
+      if(!name||!email||!p1||!p2){ toast("Lengkapi data"); return; }
+      if(p1!==p2){ toast("Password tidak sama"); return; }
+
+      try{
+        const cred = await auth.createUserWithEmailAndPassword(email, p1);
+        const uid = cred.user.uid;
+        const role = (email.toLowerCase()==="armin.gandi@gmail.com") ? "superadmin" : "crew";
+        const profile = { uid, name, email, gedung, role, wa, createdAt: Date.now() };
+        await db.ref("users/"+uid).set(profile);
+        toast("Register sukses ✅");
+        setTimeout(()=>go("login.html"), 600);
+      }catch(e){
+        toast("Register gagal: "+(e.message||e));
+      }
+    };
+  </script>
+</body>
+</html>
+</body>
+
+</html>

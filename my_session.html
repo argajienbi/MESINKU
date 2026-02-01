@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Sesi Saya</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div>
+        <h1>Sesi Saya</h1>
+        <div class="small" id="broadcastText"></div>
+      </div>
+      <button style="width:auto;margin:0" class="secondary" onclick="go('index.html')">Home</button>
+    </div>
+
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+
+    <div class="card" style="margin-top:12px">
+      <h1 style="font-size:16px;margin-bottom:6px">Sesi Aktif</h1>
+      <div id="activeSessionBox"></div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+    loadBroadcast();
+    renderMyActiveSession("activeSessionBox");
+  </script>
+</body>
+</html>

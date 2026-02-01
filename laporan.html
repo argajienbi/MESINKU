@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Laporan</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+<div class="container pagePadBottom">
+
+  <!-- ===== HEADER ===== -->
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>Laporan</h1>
+        <div class="small muted">Ringkasan & audit sistem</div>
+      </div>
+      <button class="secondary" onclick="go('admin_panel.html')">Admin</button>
+    </div>
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+
+
+  <!-- ===== FILTER ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="rangeSel">
+        <option value="1">Hari ini</option>
+        <option value="7">7 hari</option>
+        <option value="30">30 hari</option>
+      </select>
+      <button class="secondary" style="width:auto" onclick="reloadReport()">Muat</button>
+    </div>
+    <div class="small muted" id="rangeInfo" style="margin-top:8px">-</div>
+  </div>
+
+  <!-- ===== SUMMARY ===== -->
+  <div class="row">
+    <div class="card">
+      <div class="small">Total Sesi</div>
+      <div id="sumSessions" class="big">-</div>
+    </div>
+    <div class="card">
+      <div class="small">Total Durasi</div>
+      <div id="sumDuration" class="big">-</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card">
+      <div class="small">Sesi Aktif</div>
+      <div id="sumActive" class="big">-</div>
+    </div>
+    <div class="card">
+      <div class="small">Mesin Terfavorit</div>
+      <div id="sumFav" class="big">-</div>
+    </div>
+  </div>
+
+  <!-- ===== AUDIT STATUS MESIN ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900;margin-bottom:6px">🧯 Audit Status Kendala Mesin</div>
+    <div class="small muted" style="margin-bottom:10px">
+      Mesin terkunci tanpa kendala OPEN akan muncul di sini.
+    </div>
+    <div id="auditMachinesBox" class="small muted">Memuat...</div>
+  </div>
+  </div>
+  <!-- ===== TOP MESIN ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900;margin-bottom:6px">🏆 Top Mesin</div>
+    <div id="topMachines"></div>
+  </div>
+
+  <!-- ===== TOP CREW ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900;margin-bottom:6px">👥 Top Crew</div>
+    <div id="topCrew"></div>
+  </div>
+
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+
+<script>
+requireLogin();
+setOnlinePresence();
+navbar();
+
+const rangeSel = document.getElementById("rangeSel");
+const rangeInfo = document.getElementById("rangeInfo");
+
+function esc(s){ return (s||"").toString().replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])); }
+function msToText(ms){
+  if(!ms) return "0 menit";
+  const m=Math.round(ms/60000), h=Math.floor(m/60);
+  return h?`${h}j ${m%60}m`:`${m} menit`;
+}
+function isSuper(){
+  const u=getUser()||{};
+  return String(u.role||"").toLowerCase().includes("super");
+}
+
+/* ================= REPORT ================= */
+
+async function reloadReport(){
+  const days = parseInt(rangeSel.value||"1",10);
+  const fromTs = Date.now()-(days*86400000);
+  rangeInfo.textContent = `Periode ${days} hari terakhir`;
+
+  const [mSnap,hSnap,aSnap] = await Promise.all([
+    db.ref("machines").once("value"),
+    db.ref("history").limitToLast(1000).once("value"),
+    db.ref("active_sessions").once("value")
+  ]);
+
+  const machines=mSnap.val()||{};
+  const hist=Object.values(hSnap.val()||{}).filter(h=>{
+    const t=h.endAt||h.endedAt||h.startAt||h.startedAt||0;
+    return t>=fromTs;
+  });
+
+  document.getElementById("sumSessions").textContent=hist.length;
+  document.getElementById("sumActive").textContent=Object.keys(aSnap.val()||{}).length;
+
+  let totalDur=0, mAgg={}, uAgg={};
+  hist.forEach(h=>{
+    const s=h.startAt||0, e=h.endAt||0;
+    const d=(s&&e)?(e-s):0;
+    totalDur+=d;
+
+    const mid=h.machine_id||"-";
+    const mname=h.machine_name||machines[mid]?.name||mid;
+    mAgg[mid]=mAgg[mid]||{name:mname,c:0,d:0};
+    mAgg[mid].c++; mAgg[mid].d+=d;
+
+    const u=h.username||"-";
+    uAgg[u]=uAgg[u]||{c:0,d:0};
+    uAgg[u].c++; uAgg[u].d+=d;
+  });
+
+  document.getElementById("sumDuration").textContent=msToText(totalDur);
+
+  const mSorted=Object.values(mAgg).sort((a,b)=>b.c-a.c);
+  document.getElementById("sumFav").textContent=mSorted[0]?`${mSorted[0].name} (${mSorted[0].c}x)`:"-";
+
+  document.getElementById("topMachines").innerHTML=
+    mSorted.slice(0,10).map((m,i)=>`
+      <div class="list-item"><b>${i+1}. ${esc(m.name)}</b>
+      <div class="small muted">${m.c} sesi • ${msToText(m.d)}</div></div>`).join("")||"-";
+
+  const uSorted=Object.entries(uAgg).sort((a,b)=>b[1].c-a[1].c);
+  document.getElementById("topCrew").innerHTML=
+    uSorted.slice(0,10).map(([n,v],i)=>`
+      <div class="list-item"><b>${i+1}. ${esc(n)}</b>
+      <div class="small muted">${v.c} sesi • ${msToText(v.d)}</div></div>`).join("")||"-";
+}
+
+/* ================= AUDIT + RESET ================= */
+
+async function loadAuditMachines(){
+  const box=document.getElementById("auditMachinesBox");
+  const [mSnap,kSnap]=await Promise.all([
+    db.ref("machines").once("value"),
+    db.ref("kendala_reports").once("value")
+  ]);
+
+  const machines=mSnap.val()||{};
+  const kendala=kSnap.val()||{};
+  const open={};
+  Object.values(kendala).forEach(k=>{
+    if(String(k.status||"").toUpperCase()==="OPEN"){
+      const id=k.machine_id||k.machine_code;
+      if(id) open[id]=true;
+    }
+  });
+
+  const rows=Object.entries(machines).filter(([id,m])=>m.lockedByKendala && !open[id]);
+  if(!rows.length){ box.innerHTML="✅ Tidak ada mesin anomali."; return; }
+
+  box.innerHTML=rows.map(([id,m])=>`
+    <div class="list-item">
+      <b>${m.name||id}</b>
+      <div class="small muted">${id} • locked • ${m.lockedLevel||"-"}</div>
+      <div style="margin-top:6px">
+        <button class="secondary" onclick="safeReset('${id}')">🩹 Safe</button>
+        ${isSuper()?`<button class="danger" onclick="forceReset('${id}')">💥 Force</button>`:""}
+      </div>
+    </div>`).join("");
+}
+
+async function safeReset(id){
+  if(!confirm("Safe reset mesin ini?"))return;
+  await db.ref("machines/"+id).update({
+    lockedByKendala:false,lockedLevel:null,kendalaOpenId:null,
+    hasIssue:false,available:true,status:"available",updatedAt:Date.now()
+  });
+  toast("Safe reset OK"); loadAuditMachines();
+}
+async function forceReset(id){
+  if(!confirm("FORCE RESET TOTAL?"))return;
+  await db.ref("machines/"+id).update({
+    lockedByKendala:false,lockedLevel:null,kendalaOpenId:null,
+    hasIssue:false,available:true,status:"available",
+    isActive:false,inUseSince:null,lockedAt:null,
+    healedBy:"force",healedAt:Date.now(),updatedAt:Date.now()
+  });
+  toast("Force reset OK"); loadAuditMachines();
+}
+
+/* INIT */
+reloadReport();
+setTimeout(loadAuditMachines,800);
+</script>
+</body>
+</html>

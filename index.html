@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Dashboard</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+
+<body>
+  <div class="container pagePadBottom">
+
+    <!-- ===== Sticky Header ===== -->
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1 id="hello">MesinKu - Dashboard</h1>
+          <div class="small muted">Status mesin, riwayat, & pesan penting</div>
+        </div>
+      </div>
+
+      <!-- ✅ Running Text Bar (pesan berjalan dari admin) -->
+      <div id="pesanMarqueeWrap" style="margin-top:10px; display:none;">
+        <div id="pesanMarqueeBar" class="pesanBar">
+          <div id="pesanMarqueeText" class="pesanBarInner"></div>
+        </div>
+      </div>
+
+      <!-- Navbar -->
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+      <!-- ✅ Pesan berjalan mode card (opsional / legacy) -->
+      <div id="pesanMarqueeBox" class="marqueeCard" style="margin-top:10px;display:none;"></div>
+
+      <!-- ✅ Pesan penting dari Saya -->
+      <div class="card" style="margin-top:12px">
+        <div style="font-weight:850;margin-bottom:10px">📣 Pesan penting dari Saya</div>
+        <div id="broadcastPanel" class="small muted">Belum ada broadcast.</div>
+      </div>
+    </div>
+
+        <!-- ===== Riwayat Pemakaian ===== -->
+    <div class="card" style="margin-top:12px">
+      <div style="font-weight:850;margin-bottom:6px">Riwayat Pemakaian</div>
+      <div id="histList" class="small muted"></div>
+    </div>
+
+    <!-- ===== Status Mesin ===== -->
+
+
+    <!-- ===== Sticky Actions Bottom ===== -->
+    <div class="stickyActions">
+      <div class="grid2">
+        <button onclick="go('start_session.html')">Pakai Mesin</button>
+        <button class="secondary" onclick="go('my_session.html')">Selesai Pakai Mesin</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+<script src="assets/js/feature_loader.js"></script>
+  <script src="assets/js/nav_badge.js"></script>
+
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+
+    // Panels
+    renderMachineListCompact("machinesRealtimeBox");
+    renderHistoryCompact("histList");
+    renderBroadcastPanel();
+
+    // Running text
+    initPesanMarquee();
+  </script>
+</body>
+</html>

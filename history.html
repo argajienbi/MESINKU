@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Riwayat</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+  <div class="container">
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1>Riwayat Pemakaian</h1>
+          <div class="small" id="broadcastText"></div>
+        </div>
+        <button style="width:auto;margin:0" class="secondary" onclick="go('index.html')">Home</button>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div id="histList"></div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+<script src="assets/js/feature_loader.js"></script>
+
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+    mountPesanBarGlobal();
+    loadBroadcast();
+
+    const histList = document.getElementById("histList");
+
+    // ===== helper aman =====
+    function safeText(v){
+      return (v === undefined || v === null || v === "") ? "-" : String(v);
+    }
+
+    function fmtTime(ts){
+      try{
+        return new Date(ts || Date.now()).toLocaleString("id-ID");
+      }catch(e){
+        return "-";
+      }
+    }
+
+    // ===== load mesin dulu biar bisa map id -> name =====
+    let machinesMap = {};
+
+    db.ref("machines").once("value").then(snap=>{
+      const data = snap.val() || {};
+      Object.keys(data).forEach(id=>{
+        const m = data[id] || {};
+        machinesMap[id] = {
+          id,
+          name: m.name || m.nama || m.label || m.title || ""
+        };
+      });
+    }).catch(err=>{
+      console.log("Gagal load machines:", err);
+    });
+
+    // ===== realtime history =====
+    db.ref("history").limitToLast(50).on("value", snap=>{
+      const data = snap.val() || {};
+      const items = Object.values(data).filter(Boolean)
+        .sort((a,b)=>(b.endAt||0)-(a.endAt||0));
+
+      if(items.length === 0){
+        histList.innerHTML = `<div class="small">Belum ada riwayat.</div>`;
+        return;
+      }
+
+      histList.innerHTML = items.map(h=>{
+        const mid = h.machine_id || h.machineId || "-";
+        const mname = (machinesMap[mid] && machinesMap[mid].name) ? machinesMap[mid].name : mid;
+
+        const uname = h.username || h.userName || h.user || "-";
+        const tujuan = h.tujuan || "-";
+        const dur = h.durationMinutes || "-";
+        const t = fmtTime(h.endAt || Date.now());
+
+        return `
+          <div class="list-item" style="margin:10px 0;padding:12px">
+            
+            <!-- Nama mesin BESAR -->
+            <div style="font-weight:950;font-size:16px;line-height:1.2">
+              ${safeText(mname)}
+            </div>
+
+            <!-- Kode mesin kecil + user -->
+            <div class="small" style="opacity:.85;margin-top:4px">
+              ${safeText(mid)} • ${safeText(uname)}
+            </div>
+
+            <div class="small" style="margin-top:6px;opacity:.85">
+              ${t} • durasi ${dur} menit
+            </div>
+
+            <div class="small" style="margin-top:4px">
+              Tujuan: ${safeText(tujuan)}
+            </div>
+
+          </div>
+        `;
+      }).join("");
+    });
+  </script>
+<script src="assets/js/ui_global.js"></script>
+<script>
+  initGlobalUi();
+</script>
+</body>
+</html>

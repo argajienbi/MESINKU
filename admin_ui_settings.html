@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>UI Global Settings</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+
+<div class="container pagePadBottom">
+
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>UI Global</h1>
+        <div class="small muted">Preset Tema</div>
+      </div>
+      <button class="secondary" onclick="go('admin_panel.html')">Back</button>
+    </div>
+    <div id="nav"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <label class="small">Pilih Tema</label>
+    <select id="ui_preset">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+      <option value="high_contrast">High Contrast</option>
+    </select>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <label class="small">Ukuran Font</label>
+    <input type="number" id="ui_fontSize" min="12" max="22"/>
+    <label><input type="checkbox" id="ui_dense"/> Mode Rapat</label>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <label><input type="checkbox" id="ui_blur"/> Blur</label>
+    <label><input type="checkbox" id="ui_anim"/> Animasi</label>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:900">Preview</div>
+    <div id="uiPreviewBox" class="card" style="margin-top:10px"></div>
+  </div>
+
+  <button id="btnSaveUI" style="margin-top:14px">
+    💾 Simpan
+  </button>
+
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<!-- Core -->
+<script src="assets/js/firebase.js"></script>   <!-- init firebase + db -->
+<script src="assets/js/app.js"></script>        <!-- helper global -->
+
+<!-- UI -->
+<script src="assets/js/ui_global.js"></script>  <!-- listener RTDB -->
+<script src="assets/js/admin_ui_settings.js"></script>
+
+<script>
+requireLogin();
+navbar();
+
+/* SAFE NAV */
+function go(url){
+  window.location.href = url;
+}
+</script>

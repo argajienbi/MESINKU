@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Notifikasi & Broadcast</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+  <div class="container">
+
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1>Broadcast</h1>
+          <div class="small muted">Panel Admin / Superadmin</div>
+        </div>
+        <button style="width:auto;margin:0" class="secondary" onclick="go('admin_panel.html')">Panel Admin</button>
+      </div>
+
+      <div id="nav"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div style="font-weight:950">Broadcast (muncul di Home)</div>
+      <div class="small muted" style="margin-top:6px">
+        Broadcast = 1 pesan pengumuman untuk semua user.
+      </div>
+
+      <input id="btitle" placeholder="Judul broadcast (contoh: INFO PENTING)"/>
+      <textarea id="bmsg" placeholder="Isi broadcast..."></textarea>
+
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="secondary" id="btnBroadcast">Update Broadcast</button>
+        <button class="secondary" id="btnBroadcastOff">Matikan Broadcast</button>
+      </div>
+
+      <div class="small muted" style="margin-top:10px">
+        *Notifikasi chat user tetap ada di menu Notif.
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+
+    if(!isAdminOrSuper()){
+      toast("Akses ditolak (Admin only)");
+      setTimeout(()=>go("index.html"), 800);
+    }
+
+    // preload data broadcast
+    db.ref("broadcast").once("value").then(s=>{
+      const b = s.val() || {};
+      document.getElementById("btitle").value = b.title || "";
+      document.getElementById("bmsg").value = b.message || "";
+    });
+
+    document.getElementById("btnBroadcast").onclick = ()=>{
+      if(!isAdminOrSuper()) return;
+      const title = document.getElementById("btitle").value.trim();
+      const msg = document.getElementById("bmsg").value.trim();
+      db.ref("broadcast").set({
+        active: true,
+        title: title,
+        message: msg,
+        updatedAt: Date.now(),
+        updatedBy: getUser().uid,
+        updatedByName: getUser().name
+      });
+      toast("Broadcast diupdate ✅");
+    };
+
+    document.getElementById("btnBroadcastOff").onclick = ()=>{
+      if(!isAdminOrSuper()) return;
+      db.ref("broadcast").set({
+        active: false,
+        title: "",
+        message: "",
+        updatedAt: Date.now(),
+        updatedBy: getUser().uid,
+        updatedByName: getUser().name
+      });
+      toast("Broadcast dimatikan ✅");
+    };
+  </script>
+</body>
+</html>

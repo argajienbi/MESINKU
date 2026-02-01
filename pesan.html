@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Pesan Dashboard</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+
+  <style>
+    /* ===== Pesan Marquee Preview (Admin Panel) ===== */
+    .pesanPreviewBox{
+      margin-top:12px;
+      border-radius:18px;
+      padding:12px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.07);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .pesanBar{
+      width:100%;
+      border-radius:16px;
+      overflow:hidden;
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.08);
+      padding:10px 0;
+      position:relative;
+    }
+
+    .pesanBarTrack{
+      width:100%;
+      overflow:hidden;
+      white-space:nowrap;
+      position:relative;
+    }
+
+    .pesanBarInner{
+      display:inline-block;
+      padding-left:100%;
+      animation: marqueeLeft linear infinite;
+      font-weight:900;
+      letter-spacing:.2px;
+      text-shadow: 0 0 12px rgba(0,0,0,.25);
+    }
+
+    @keyframes marqueeLeft{
+      0%{ transform:translateX(0); }
+      100%{ transform:translateX(-100%); }
+    }
+
+    @keyframes marqueeRight{
+      0%{ transform:translateX(-100%); }
+      100%{ transform:translateX(0); }
+    }
+
+    /* Blink effect */
+    .pesanBlink{
+      animation-name: blinkAnim !important;
+      animation-duration: 1s !important;
+      animation-timing-function: step-end !important;
+      animation-iteration-count: infinite !important;
+    }
+    @keyframes blinkAnim{
+      50%{ opacity: 0; }
+    }
+
+    /* Rainbow text effect */
+    .pesanRainbow{
+      background: linear-gradient(
+        90deg,
+        #ff004c,
+        #ff8a00,
+        #ffe600,
+        #00ff85,
+        #00c2ff,
+        #8a5cff,
+        #ff00c8
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent !important;
+      text-shadow: none !important;
+      filter: drop-shadow(0 0 6px rgba(0, 180, 255, 0.35));
+    }
+
+    /* small helper */
+    .row2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    .row3{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .hint{
+      opacity:.8;
+      font-size:12px;
+      margin-top:6px;
+      line-height:1.35;
+    }
+
+    .colorRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:8px;
+    }
+    .colorRow input[type="color"]{
+      width:58px;
+      height:42px;
+      padding:0;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:transparent;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container pagePadBottom">
+
+    <!-- ===== Sticky Header ===== -->
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1>Pesan Dashboard</h1>
+          <div class="small">Panel Admin untuk teks berjalan di Dashboard</div>
+        </div>
+        <button style="width:auto;margin:0" class="secondary" onclick="go('admin_panel.html')">Kembali</button>
+      </div>
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+    </div>
+
+    <!-- ===== MAIN ===== -->
+    <div class="card" style="margin-top:12px">
+      <div style="font-weight:900">Pengaturan Pesan Berjalan</div>
+      <div class="small muted" style="margin-top:6px">
+        Data disimpan di RTDB: <b>/pesan_marquee</b>
+      </div>
+
+      <div class="row2">
+        <div>
+          <div class="small" style="margin-top:10px">Aktifkan</div>
+          <select id="pActive">
+            <option value="true">ON</option>
+            <option value="false">OFF</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="small" style="margin-top:10px">Kedap-kedip (Blink)</div>
+          <select id="pBlink">
+            <option value="false">OFF</option>
+            <option value="true">ON</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="small" style="margin-top:10px">Isi Pesan</div>
+      <textarea id="pText" placeholder="Contoh: ✅ Safety first! Mesin selesai pakai harap dikembalikan."></textarea>
+
+      <div class="row3">
+        <div>
+          <div class="small" style="margin-top:10px">Ukuran Font</div>
+          <input id="pFontSize" type="number" min="10" max="42" value="18"/>
+        </div>
+
+        <div>
+          <div class="small" style="margin-top:10px">Kecepatan (detik)</div>
+          <input id="pSpeed" type="number" min="10" max="200" value="60"/>
+        </div>
+
+        <div>
+          <div class="small" style="margin-top:10px">Arah Jalan</div>
+          <select id="pDirection">
+            <option value="left">Ke kiri</option>
+            <option value="right">Ke kanan</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="small" style="margin-top:10px">Mode Warna Teks</div>
+      <select id="pColorMode">
+        <option value="solid">Solid (1 warna)</option>
+        <option value="rainbow">Rainbow (auto warna-warni)</option>
+      </select>
+
+      <div class="small" style="margin-top:10px">Warna Teks (Solid)</div>
+      <div class="colorRow">
+        <input id="pTextColor" type="color" value="#00d4ff"/>
+        <input id="pTextColorHex" placeholder="#00d4ff" value="#00d4ff"/>
+      </div>
+
+      <div class="small" style="margin-top:10px">Warna Background Bar</div>
+      <div class="colorRow">
+        <input id="pBgColor" type="color" value="#0b1220"/>
+        <input id="pBgColorHex" placeholder="#0b1220" value="#0b1220"/>
+      </div>
+
+      <div class="hint">
+        ✅ Kalau pilih <b>Rainbow</b>, warna solid akan diabaikan.<br/>
+        ⚡ Kecepatan = durasi animasi (semakin kecil semakin ngebut).
+      </div>
+
+      <div class="row2" style="margin-top:12px">
+        <button id="btnSave">Simpan</button>
+        <button class="secondary" id="btnReset">Reset Default</button>
+      </div>
+    </div>
+
+    <!-- ===== PREVIEW ===== -->
+    <div class="card" style="margin-top:12px">
+      <div style="font-weight:900">Preview</div>
+      <div class="small muted" style="margin-top:6px">Ini hanya preview. Dashboard akan pakai data real-time dari RTDB.</div>
+
+      <div class="pesanPreviewBox" id="previewBox"></div>
+    </div>
+
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+
+    if(!isAdminOrSuper()){
+      toast("Akses ditolak (Admin only)");
+      setTimeout(()=>go("index.html"), 800);
+    }
+
+    const ref = db.ref("pesan_marquee");
+
+    const elActive = document.getElementById("pActive");
+    const elBlink = document.getElementById("pBlink");
+    const elText = document.getElementById("pText");
+    const elFontSize = document.getElementById("pFontSize");
+    const elSpeed = document.getElementById("pSpeed");
+    const elDirection = document.getElementById("pDirection");
+    const elColorMode = document.getElementById("pColorMode");
+
+    const elTextColor = document.getElementById("pTextColor");
+    const elTextColorHex = document.getElementById("pTextColorHex");
+
+    const elBgColor = document.getElementById("pBgColor");
+    const elBgColorHex = document.getElementById("pBgColorHex");
+
+    const previewBox = document.getElementById("previewBox");
+
+    function syncColorInputs(){
+      elTextColor.addEventListener("input", ()=>{
+        elTextColorHex.value = elTextColor.value;
+        updatePreviewFromForm();
+      });
+      elBgColor.addEventListener("input", ()=>{
+        elBgColorHex.value = elBgColor.value;
+        updatePreviewFromForm();
+      });
+
+      elTextColorHex.addEventListener("input", ()=>{
+        const v = (elTextColorHex.value||"").trim();
+        if(/^#[0-9A-Fa-f]{6}$/.test(v)) elTextColor.value = v;
+        updatePreviewFromForm();
+      });
+      elBgColorHex.addEventListener("input", ()=>{
+        const v = (elBgColorHex.value||"").trim();
+        if(/^#[0-9A-Fa-f]{6}$/.test(v)) elBgColor.value = v;
+        updatePreviewFromForm();
+      });
+    }
+    syncColorInputs();
+
+    function getFormCfg(){
+      return {
+        active: String(elActive.value) === "true",
+        text: (elText.value || "").trim(),
+        fontSize: parseInt(elFontSize.value || "18", 10),
+        speed: parseInt(elSpeed.value || "60", 10),
+        direction: elDirection.value || "left",
+        blink: String(elBlink.value) === "true",
+        colorMode: elColorMode.value || "solid",
+        textColor: (elTextColorHex.value || elTextColor.value || "#00d4ff").trim(),
+        bgColor: (elBgColorHex.value || elBgColor.value || "#0b1220").trim(),
+      };
+    }
+
+    function renderPreview(cfg){
+      if(!cfg.active || !cfg.text){
+        previewBox.innerHTML = `<div class="small muted">Preview kosong (OFF / teks kosong)</div>`;
+        return;
+      }
+
+      const animName = cfg.direction === "right" ? "marqueeRight" : "marqueeLeft";
+      const rainbowClass = (cfg.colorMode === "rainbow") ? "pesanRainbow" : "";
+      const blinkClass = cfg.blink ? "pesanBlink" : "";
+
+      previewBox.innerHTML = `
+        <div class="pesanBar" style="background:${escapeHtml(cfg.bgColor)}">
+          <div class="pesanBarTrack">
+            <div class="pesanBarInner ${rainbowClass} ${blinkClass}"
+              style="
+                font-size:${cfg.fontSize}px;
+                animation-name:${animName};
+                animation-duration:${cfg.speed}s;
+                color:${cfg.colorMode === "rainbow" ? "#ffffff" : escapeHtml(cfg.textColor)};
+              ">
+              ${escapeHtml(cfg.text)} &nbsp;&nbsp; • &nbsp;&nbsp; ${escapeHtml(cfg.text)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updatePreviewFromForm(){
+      renderPreview(getFormCfg());
+    }
+
+    // live preview updates
+    ["input","change"].forEach(evt=>{
+      elActive.addEventListener(evt, updatePreviewFromForm);
+      elBlink.addEventListener(evt, updatePreviewFromForm);
+      elText.addEventListener(evt, updatePreviewFromForm);
+      elFontSize.addEventListener(evt, updatePreviewFromForm);
+      elSpeed.addEventListener(evt, updatePreviewFromForm);
+      elDirection.addEventListener(evt, updatePreviewFromForm);
+      elColorMode.addEventListener(evt, updatePreviewFromForm);
+    });
+
+    function loadPesan(){
+      ref.once("value").then(snap=>{
+        const cfg = snap.val() || {};
+
+        elActive.value = (cfg.active === false) ? "false" : "true";
+        elBlink.value = cfg.blink ? "true" : "false";
+        elText.value = cfg.text || "";
+        elFontSize.value = cfg.fontSize || 18;
+        elSpeed.value = cfg.speed || 60;
+        elDirection.value = cfg.direction || "left";
+
+        elColorMode.value = cfg.colorMode || "solid";
+
+        elTextColor.value = cfg.textColor || "#00d4ff";
+        elTextColorHex.value = cfg.textColor || "#00d4ff";
+
+        elBgColor.value = cfg.bgColor || "#0b1220";
+        elBgColorHex.value = cfg.bgColor || "#0b1220";
+
+        updatePreviewFromForm();
+      });
+    }
+    loadPesan();
+
+    document.getElementById("btnSave").onclick = async ()=>{
+      const u = getUser() || {};
+      const cfg = getFormCfg();
+
+      const payload = {
+        ...cfg,
+        updatedAt: Date.now(),
+        updatedByUid: u.uid || "",
+        updatedByName: u.name || u.username || u.email || "admin"
+      };
+
+      await ref.set(payload);
+      toast("✅ Pesan dashboard disimpan");
+    };
+
+    document.getElementById("btnReset").onclick = async ()=>{
+      const ok = confirm("Reset ke default?");
+      if(!ok) return;
+
+      const u = getUser() || {};
+      await ref.set({
+        active: true,
+        text: "✅ Selamat bekerja! Safety nomor 1 ya.",
+        fontSize: 18,
+        speed: 60,
+        direction: "left",
+        blink: false,
+        colorMode: "solid",
+        textColor: "#00d4ff",
+        bgColor: "#0b1220",
+        updatedAt: Date.now(),
+        updatedByUid: u.uid || "",
+        updatedByName: u.name || u.username || u.email || "admin"
+      });
+
+      toast("Reset default ✅");
+      loadPesan();
+    };
+  </script>
+</body>
+</html>

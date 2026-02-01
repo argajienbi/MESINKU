@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Laporkan Kendala</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+  <div class="container pagePadBottom">
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1>Laporkan Kendala</h1>
+          <div class="small muted">Kendala akan masuk ke sistem (kendala_reports)</div>
+        </div>
+        <button style="width:auto;margin:0" class="secondary" onclick="go('index.html')">Home</button>
+      </div>
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="small">Pilih Mesin (wajib)</div>
+      <select id="machineSel"></select>
+
+      <div class="small" style="margin-top:10px">Level Kendala</div>
+      <select id="levelSel">
+        <option value="RINGAN">RINGAN</option>
+        <option value="SEDANG" selected>SEDANG</option>
+        <option value="BERAT">BERAT</option>
+      </select>
+
+      <div class="small" style="margin-top:10px">Lokasi / Tujuan (opsional)</div>
+      <input id="lokasiTxt" placeholder="Contoh: Dome lantai 2 / Gudang A"/>
+
+      <div class="small" style="margin-top:10px">Isi Kendala (wajib)</div>
+      <textarea id="pesanTxt" placeholder="Jelaskan kendalanya..." style="min-height:120px"></textarea>
+
+      <button id="btnSend" style="margin-top:12px">Kirim Kendala</button>
+      <div class="small muted" style="margin-top:10px;opacity:.85">
+        * Jika level <b>BERAT</b>, mesin akan otomatis dikunci sampai admin menyelesaikan.
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div style="font-weight:850;margin-bottom:8px">📌 Kendala OPEN Terbaru</div>
+      <div id="kendalaList" class="small muted">Memuat...</div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+<script src="assets/js/feature_loader.js"></script>
+
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    mountPesanBarGlobal();
+    navbar();
+
+    // load machines (only active/available-ish)
+    function loadMachineOptions(){
+      const sel = document.getElementById('machineSel');
+      sel.innerHTML = `<option value="">-- pilih mesin --</option>`;
+      db.ref("machines").once("value").then(snap=>{
+        const data = snap.val() || {};
+        const items = Object.keys(data).map(id=>({id, ...(data[id]||{})}))
+          .filter(m => m && m.id)
+          .filter(m => m.isActive !== false); // hide disabled/locked
+        items.sort((a,b)=>(String(a.code||a.id)).localeCompare(String(b.code||b.id)));
+
+        items.forEach(m=>{
+          const name = m.name || m.nama || m.machine_name || m.machineName || m.code || m.id;
+          const label = `${name} (${m.id})`;
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = label;
+          sel.appendChild(opt);
+        });
+      });
+    }
+
+    loadMachineOptions();
+
+    // render open reports
+    renderKendalaReportsList("kendalaList", 10);
+
+    document.getElementById("btnSend").onclick = ()=>{
+      const mid = (document.getElementById("machineSel").value||"").trim();
+      const level = (document.getElementById("levelSel").value||"SEDANG").trim();
+      const lokasi = (document.getElementById("lokasiTxt").value||"").trim();
+      const pesan = (document.getElementById("pesanTxt").value||"").trim();
+
+      if(!mid){ toast("Wajib pilih mesin!"); return; }
+      if(!pesan){ toast("Isi kendala wajib diisi!"); return; }
+
+      const u = getUser() || {};
+      db.ref("machines/"+mid).once("value").then(ms=>{
+        const m = ms.val() || {};
+        const mname = m.name || m.nama || m.machine_name || m.machineName || m.code || mid;
+
+        const id = db.ref("kendala_reports").push().key;
+        const payload = {
+          machine_id: mid,
+          machine_name: mname,
+          level: level,
+          lokasi: lokasi || "-",
+          pesan: pesan,
+          status: "OPEN",
+          createdAt: Date.now(),
+          createdByUid: u.uid || "",
+          createdByName: u.name || u.username || u.email || "-",
+          createdByRole: u.role || "crew",
+          doneAt: null,
+          doneByUid: null,
+          doneByName: null
+        };
+
+        const updates = {};
+        updates["kendala_reports/"+id] = payload;
+
+        // if BERAT -> lock machine
+        if(String(level).toUpperCase()==="BERAT"){
+          updates["machines/"+mid+"/isActive"] = false;
+          updates["machines/"+mid+"/status"] = "maintenance";
+          updates["machines/"+mid+"/lockedByKendala"] = true;
+          updates["machines/"+mid+"/lockedLevel"] = "BERAT";
+          updates["machines/"+mid+"/lockedAt"] = Date.now();
+        }
+
+        return db.ref().update(updates).then(()=>{
+          toast("Kendala terkirim ✅");
+          document.getElementById("pesanTxt").value = "";
+          document.getElementById("lokasiTxt").value = "";
+          document.getElementById("levelSel").value = "SEDANG";
+        });
+      }).catch(e=>toast("Gagal kirim: "+e.message));
+    };
+  </script>
+</body>
+</html>

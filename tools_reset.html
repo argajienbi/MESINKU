@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Tools Reset</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+
+<div class="container pagePadBottom">
+
+  <!-- ===== HEADER ===== -->
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>Tools Reset</h1>
+        <div class="small muted">Admin / Superadmin</div>
+      </div>
+      <button class="secondary" onclick="go('admin_panel.html')">Panel Admin</button>
+    </div>
+    <div id="nav"></div>
+  </div>
+
+  <!-- ===== INFO ===== -->
+  <div class="card" style="margin-top:12px">
+    <div style="font-weight:950">Reset & Maintenance</div>
+    <div class="small muted" style="margin-top:6px">
+      Menu ini hanya menampilkan tombol reset & debug.<br/>
+      User biasa tidak dapat mengakses fungsi di bawah.
+    </div>
+  </div>
+
+  <!-- ===== RESET TOOLS (ADMIN & SUPERADMIN ONLY) ===== -->
+  <div id="resetTools" class="card" style="margin-top:12px;display:none">
+    <div style="font-weight:900">Aksi Reset</div>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px">
+      <button class="danger" onclick="resetUserMessages()">
+        Reset Pesan User
+      </button>
+
+      <button class="secondary" onclick="confirmReset('Force selesai SEMUA SESI aktif?', ()=>forceEndAllSessions())">
+        Force Selesai Semua Sesi
+      </button>
+
+      <button class="secondary" onclick="confirmReset('Reset RIWAYAT pemakaian?', ()=>resetHistory())">
+        Reset Riwayat Mesin
+      </button>
+
+      <button class="secondary" onclick="confirmReset('Reset STATUS semua mesin jadi available?', ()=>resetAllMachinesStatus())">
+        Reset Status Semua Mesin
+      </button>
+
+      <button class="secondary" onclick="confirmReset('Reset BROADCAST?', ()=>resetBroadcast())">
+        Reset Broadcast
+      </button>
+
+      <button class="secondary" onclick="confirmReset('Reset ONLINE cache?', ()=>resetOnlineCache())">
+        Reset Online Cache
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+
+<script>
+  requireLogin();
+  setOnlinePresence();
+  navbar();
+
+  const u = getUser();
+
+  // ===== VISIBILITY CONTROL =====
+  if (u && (u.role === "admin" || u.role === "superadmin")) {
+    document.getElementById("resetTools").style.display = "block";
+  } else {
+    document.getElementById("resetTools").style.display = "none";
+    toast("Mode lihat saja");
+  }
+
+  // ===== ACTIONS (TIDAK NAMB AH FITUR) =====
+  function resetUserMessages(){
+    if(!confirm("Reset semua pesan user?")) return;
+    db.ref("user_messages").remove()
+      .then(()=>toast("Pesan user direset ✅"))
+      .catch(e=>toast("Gagal reset: "+e.message));
+  }
+</script>
+
+</body>
+</html>

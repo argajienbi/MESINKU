@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Pakai Mesin</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+</head>
+<body>
+  <div class="container">
+    <div class="sticky-top">
+      <div class="topbar">
+        <div>
+          <h1>Pakai Mesin</h1>
+          <div class="small" id="broadcastText"></div>
+        </div>
+        <button style="width:auto;margin:0" class="secondary" onclick="go('index.html')">Home</button>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="small">Pilih Mesin (hanya available)</div>
+      <select id="machineSelect"></select>
+
+      <div class="small" style="margin-top:10px">Gedung (dari profil)</div>
+      <input id="gedungAuto" readonly />
+
+      <input id="inputTujuan" placeholder="Tujuan mesin dipakai"/>
+      <input id="inputLokasiTujuan" placeholder="Lokasi tujuan dipakai mesin"/>
+      <input id="inputDariMana" placeholder="Dari mana mesin dipakai"/>
+      <textarea id="inputCatatan" placeholder="Catatan"></textarea>
+
+      <button id="btnStartSession">Mulai</button>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <script src="assets/js/firebase.js"></script>
+  <script src="assets/js/app.js"></script>
+
+  <script>
+    requireLogin();
+    setOnlinePresence();
+    navbar();
+    loadBroadcast();
+
+    const u = getUser();
+    document.getElementById("gedungAuto").value = u.gedung || "";
+
+    const machineSelect = document.getElementById("machineSelect");
+
+    // ✅ Load mesin available
+    function loadAvailableMachines(){
+      db.ref("machines").on("value", snap=>{
+        const data = snap.val() || {};
+        const items = Object.entries(data)
+          .map(([id,m]) => ({ id, ...(m||{}) }))
+          .filter(m =>
+            m &&
+            m.isActive !== false &&
+            (m.status || "available") === "available" &&
+            m.lockedByKendala !== true // ✅ mesin berat terkunci tidak masuk
+          );
+
+        items.sort((a,b) => (a.code||a.id||"").localeCompare(b.code||b.id||""));
+
+        machineSelect.innerHTML = "";
+
+        if(items.length === 0){
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "(Tidak ada mesin tersedia)";
+          machineSelect.appendChild(opt);
+          return;
+        }
+
+        items.forEach(m=>{
+          const code = m.code || m.id;
+          const name = m.name || "-";
+          const group = m.group || "-";
+
+          const opt = document.createElement("option");
+          opt.value = code;
+          opt.textContent = `${code} — ${name} (${group})`;
+          machineSelect.appendChild(opt);
+        });
+      });
+    }
+
+    loadAvailableMachines();
+
+    // ✅ Start Session
+    document.getElementById("btnStartSession").onclick = async ()=>{
+      try{
+        const machine_id = machineSelect.value;
+        if(!machine_id){
+          toast("Mesin tidak tersedia");
+          return;
+        }
+
+        const tujuan = document.getElementById("inputTujuan").value.trim();
+        const lokasiTujuan = document.getElementById("inputLokasiTujuan").value.trim();
+        const dariMana = document.getElementById("inputDariMana").value.trim();
+        const catatan = document.getElementById("inputCatatan").value.trim();
+
+        // ✅ Cek user masih punya sesi aktif
+        const snapMy = await db.ref("active_sessions/" + u.uid).once("value");
+        if(snapMy.exists()){
+          toast("Kamu masih punya sesi aktif!");
+          return;
+        }
+
+        // ✅ Ambil data mesin terbaru
+        const snapM = await db.ref("machines/" + machine_id).once("value");
+        const m = snapM.val();
+
+        if(!m){
+          toast("Data mesin tidak ditemukan");
+          return;
+        }
+
+        if(m.isActive === false){
+          toast("Mesin sedang dinonaktifkan");
+          return;
+        }
+
+        if((m.status || "available") !== "available"){
+          toast("Mesin sudah dipakai orang lain");
+          return;
+        }
+
+        if(m.lockedByKendala === true){
+          toast("Mesin terkunci karena kendala BERAT");
+          return;
+        }
+
+        // ✅ penting: ambil nama mesin ASLI dari RTDB
+        const machine_name = m.name || machine_id;
+
+        const session = {
+          uid: u.uid,
+          username: u.name || u.username || u.email || "-",
+          gedung: u.gedung || "",
+
+          machine_id: machine_id,
+          machine_name: machine_name, // ✅ FIX UTAMA
+
+          tujuan: tujuan,
+          lokasiTujuan: lokasiTujuan,
+          dariMana: dariMana,
+          catatan: catatan,
+
+          startAt: Date.now()
+        };
+
+        const updates = {};
+        updates["active_sessions/" + u.uid] = session;
+
+        updates["machines/" + machine_id + "/status"] = "in_use";
+        updates["machines/" + machine_id + "/currentUser"] = session.username;
+        updates["machines/" + machine_id + "/currentSessionId"] = u.uid;
+        updates["machines/" + machine_id + "/inUseSince"] = session.startAt;
+        updates["machines/" + machine_id + "/updatedAt"] = Date.now();
+
+        await db.ref().update(updates);
+
+        toast("Sesi dimulai ✅");
+        setTimeout(()=>go("index.html"), 500);
+
+      }catch(err){
+        console.error(err);
+        toast("Gagal mulai sesi: " + (err.message || err));
+      }
+    };
+  </script>
+</body>
+</html>

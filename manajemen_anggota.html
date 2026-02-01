@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MesinKu - Manajemen Anggota</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+
+  <style>
+    .memberListPadBottom{
+      padding-bottom: 420px;
+    }
+
+    .editStickyBottom{
+      position: sticky;
+      bottom: 0;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(10, 18, 35, 0.82);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.35);
+      margin-top: 14px;
+    }
+
+    .btnRow2{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .btnRow2 button{
+      flex:1;
+      min-width:140px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="container pagePadBottom">
+
+  <!-- ===== HEADER ===== -->
+  <div class="sticky-top">
+    <div class="topbar">
+      <div>
+        <h1>Manajemen Anggota</h1>
+        <div class="small muted">Admin / Superadmin</div>
+      </div>
+      <button class="secondary" onclick="go('index.html')">Home</button>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div id="nav"></div>
+    </div>
+  </div>
+
+  <!-- ===== LIST ANGGOTA ===== -->
+  <div class="card memberListPadBottom" style="margin-top:12px">
+    <div style="font-weight:850;margin-bottom:8px">Daftar Anggota</div>
+    <div id="membersBox" class="small muted">Memuat...</div>
+  </div>
+
+  <!-- ===== EDIT ANGGOTA ===== -->
+  <div class="editStickyBottom">
+    <div style="font-weight:850;margin-bottom:6px">Edit Anggota</div>
+    <div class="small muted" style="margin-bottom:10px">
+      Pilih anggota dari list untuk mengisi form
+    </div>
+
+    <input id="f_uid" placeholder="UID (auto)" disabled />
+    <input id="f_name" placeholder="Nama" />
+    <input id="f_email" placeholder="Email (jika ada)" />
+    <input id="f_wa" placeholder="No WhatsApp (08xxx / +62xxx)" />
+    <input id="f_building" placeholder="Gedung (A / B / Dome)" />
+
+    <select id="f_role">
+      <option value="crew">crew</option>
+      <option value="admin">admin</option>
+      <option value="superadmin">superadmin</option>
+    </select>
+
+    <div class="btnRow2">
+      <button id="btnSave">Simpan</button>
+      <button id="btnToggleActive" class="secondary">Disable / Enable</button>
+    </div>
+
+    <button id="btnHideStatus" class="secondary" style="margin-top:10px;width:100%">
+      Hide / Show dari Status Anggota
+    </button>
+
+    <button id="btnForceEnd" class="danger" style="margin-top:10px;width:100%">
+      Force Akhiri Sesi User
+    </button>
+
+    <button id="btnDeleteMember" class="danger"
+            style="margin-top:10px;width:100%;background:#7a1b1b">
+      Hapus Anggota (RTDB)
+    </button>
+
+    <div class="small muted" style="margin-top:8px;line-height:1.3">
+      * Disable hanya set <b>isActive=false</b><br/>
+      * Hide hanya sembunyikan dari Status Anggota<br/>
+      * Hapus hanya data RTDB (bukan Auth)
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+<script src="assets/js/firebase.js"></script>
+<script src="assets/js/app.js"></script>
+
+<script>
+requireLogin();
+setOnlinePresence();
+navbar();
+
+if(!isAdminOrSuper()){
+  toast("Akses ditolak");
+  setTimeout(()=>go("index.html"),800);
+}
+
+const membersBox = document.getElementById("membersBox");
+
+const f_uid = document.getElementById("f_uid");
+const f_name = document.getElementById("f_name");
+const f_email = document.getElementById("f_email");
+const f_wa = document.getElementById("f_wa");
+const f_building = document.getElementById("f_building");
+const f_role = document.getElementById("f_role");
+
+const btnSave = document.getElementById("btnSave");
+const btnToggleActive = document.getElementById("btnToggleActive");
+const btnHideStatus = document.getElementById("btnHideStatus");
+const btnForceEnd = document.getElementById("btnForceEnd");
+const btnDeleteMember = document.getElementById("btnDeleteMember");
+
+let membersCache = [];
+let selectedUID = "";
+
+function esc(s){ return escapeHtml(String(s ?? "")); }
+
+function renderMembers(){
+  if(!membersCache.length){
+    membersBox.innerHTML = `<div class="small muted">Belum ada anggota.</div>`;
+    return;
+  }
+
+  membersBox.innerHTML = membersCache.map(m=>{
+    return `
+      <div class="list-item" onclick="selectMember('${esc(m.uid)}')" style="cursor:pointer">
+        <div style="display:flex;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-weight:850">${esc(m.name)}</div>
+            <div class="small muted">${esc(m.email)}</div>
+            ${m.wa ? `<div class="small muted">📱 ${esc(m.wa)}</div>` : ``}
+            <div class="small muted">🏢 ${esc(m.building)}</div>
+            <div class="small muted">UID: ${esc(m.uid)}</div>
+          </div>
+          <div style="text-align:right">
+            <span class="pill">${esc(m.role)}</span><br/>
+            <span class="pill ${m.isActive?'':'danger'}">${m.isActive?'active':'disabled'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+window.selectMember = function(uid){
+  const m = membersCache.find(x=>x.uid===uid);
+  if(!m) return;
+
+  selectedUID = uid;
+  f_uid.value = uid;
+  f_name.value = m.name;
+  f_email.value = m.email;
+  f_wa.value = m.wa;
+  f_building.value = m.building;
+  f_role.value = m.role;
+
+  toast("Anggota dipilih");
+}
+
+function loadMembers(){
+  db.ref("users").once("value").then(snap=>{
+    const data = snap.val() || {};
+    membersCache = Object.entries(data).map(([uid,v])=>({
+      uid,
+      name: v.name || "",
+      email: v.email || "",
+      wa: v.wa || "",
+      building: v.building || "",
+      role: v.role || "crew",
+      isActive: v.isActive !== false,
+      hideFromStatus: v.hideFromStatus === true
+    }));
+    membersCache.sort((a,b)=>a.name.localeCompare(b.name));
+    renderMembers();
+  });
+}
+
+btnSave.onclick = ()=>{
+  if(!selectedUID) return toast("Pilih anggota dulu");
+
+  db.ref("users/"+selectedUID).update({
+    name: f_name.value.trim(),
+    email: f_email.value.trim(),
+    wa: f_wa.value.trim(),
+    building: f_building.value.trim(),
+    role: f_role.value
+  }).then(()=>{
+    toast("✅ Disimpan");
+    loadMembers();
+  });
+};
+
+btnToggleActive.onclick = ()=>{
+  if(!selectedUID) return toast("Pilih anggota dulu");
+  db.ref("users/"+selectedUID+"/isActive").once("value").then(s=>{
+    return db.ref("users/"+selectedUID).update({isActive: s.val()===false});
+  }).then(()=>loadMembers());
+};
+
+btnHideStatus.onclick = ()=>{
+  if(!selectedUID) return toast("Pilih anggota dulu");
+  db.ref("users/"+selectedUID+"/hideFromStatus").once("value").then(s=>{
+    return db.ref("users/"+selectedUID).update({hideFromStatus: !s.val()});
+  }).then(()=>loadMembers());
+};
+
+btnForceEnd.onclick = ()=>{
+  if(!selectedUID) return;
+  if(!confirm("Force akhiri sesi user?")) return;
+  db.ref().update({
+    ["sessions_active/"+selectedUID]: null,
+    ["current_session/"+selectedUID]: null,
+    ["presence/"+selectedUID]: null
+  }).then(()=>toast("Sesi diputus"));
+};
+
+btnDeleteMember.onclick = ()=>{
+  if(!selectedUID) return;
+  if(!confirm("Hapus anggota dari RTDB?")) return;
+  db.ref().update({
+    ["users/"+selectedUID]: null,
+    ["sessions_active/"+selectedUID]: null,
+    ["current_session/"+selectedUID]: null,
+    ["presence/"+selectedUID]: null
+  }).then(()=>{
+    toast("Anggota dihapus");
+    selectedUID="";
+    f_uid.value=f_name.value=f_email.value=f_wa.value=f_building.value="";
+    f_role.value="crew";
+    loadMembers();
+  });
+};
+
+loadMembers();
+</script>
+</body>
+</html>
