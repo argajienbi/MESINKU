@@ -1,0 +1,715 @@
+:root{
+  --bg:#0b1220;
+  --card:#0f1b33;
+  --card2:#0f2143;
+  --text:#e8eefc;
+  --muted:#9fb0d0;
+  --accent:#3b82f6;
+  --danger:#ef4444;
+  --ok:#22c55e;
+}
+*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;}
+body{margin:0;background:var(--bg);color:var(--text);}
+a{color:var(--accent);text-decoration:none}
+.container{max-width:720px;margin:0 auto;padding:16px;}
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  background:linear-gradient(180deg, rgba(15,27,51,.9), rgba(15,27,51,.6));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:14px 14px;
+}
+h1{margin:0;font-size:22px;}
+.small{color:var(--muted);font-size:12px}
+.row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+.card{
+  flex:1;min-width:170px;
+  background:var(--card);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:12px;
+}
+button{
+  width:100%;
+  margin-top:10px;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background:var(--accent);
+  color:white;font-weight:750;
+}
+button.secondary{background:var(--card2)}
+button.danger{background:var(--danger)}
+input,select,textarea{
+  width:100%;
+  margin-top:8px;
+  padding:12px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.03);
+  color:var(--text);
+}
+textarea{min-height:80px;resize:vertical}
+.list-item{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  padding:10px 12px;
+}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.12)}
+.badge.ok{background:rgba(34,197,94,.15)}
+.badge.busy{background:rgba(239,68,68,.15)}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+  background:rgba(15,27,51,.95);
+  border:1px solid rgba(255,255,255,.12);
+  padding:10px 12px;border-radius:14px;
+  color:var(--text);min-width:240px;text-align:center;
+  z-index:99;
+}
+.nav{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:12px
+}
+.nav a{
+  padding:8px 10px;border-radius:999px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  font-size:13px;
+}
+
+/* Home improvements */
+.stickyActions{
+  position:fixed;
+  left:0; right:0; bottom:0;
+  padding:10px 12px;
+  background:rgba(11,18,32,.95);
+  border-top:1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(8px);
+  z-index:100;
+}
+.stickyActions .grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  max-width:720px;
+  margin:0 auto;
+}
+.pagePadBottom{ padding-bottom:110px; }
+.cardScroll{
+  max-height:55vh;
+  overflow-y:auto;
+}
+
+/* Sticky top nav/header (HopWeb safe) */
+.sticky-top{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(11,18,32,.92);
+  backdrop-filter: blur(6px);
+  padding-top: 10px;
+}
+
+
+/* ===== Broadcast Panel Bigger ===== */
+#broadcastPanel .bcTitle{
+  font-size: 18px;
+  font-weight: 950;
+  margin-bottom: 6px;
+}
+#broadcastPanel .bcMsg{
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+#broadcastPanel .bcMeta{
+  font-size: 12px;
+  opacity: .85;
+  margin-top: 8px;
+}
+
+
+/* === User Panel Content === */
+.userPanelMeta{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;
+background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-size:12px}
+.chip strong{font-weight:800}
+.userQuickActions{margin-top:10px;display:flex;gap:10px}
+.userQuickActions button{margin:0}
+
+
+/* ===== Admin Management Pages ===== */
+.cardScroll{
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.rowActions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.btnTiny{
+  width:auto;
+  padding:8px 10px;
+  font-size:12px;
+}
+
+
+/* ===== Compact Navbar (Horizontal Scroll) ===== */
+.nav.nav-compact{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  flex-wrap:nowrap;
+  padding-bottom:6px;
+}
+.nav.nav-compact a{
+  flex:0 0 auto;
+}
+
+
+/* ===== Chat Bubble ===== */
+.chatList{
+  max-height: 72vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.bubbleWrap{
+  display:flex;
+  width:100%;
+  margin:10px 0;
+}
+.bubbleWrap.left{ justify-content:flex-start; }
+.bubbleWrap.right{ justify-content:flex-end; }
+
+.bubble{
+  position:relative;
+  max-width: 85%;
+  padding: 12px 12px;
+  border-radius: 16px;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow: 0 8px 20px rgba(0,0,0,.25);
+}
+
+.bubble.other{
+  background: rgba(15, 28, 55, .85);
+  border-top-left-radius: 8px;
+}
+
+.bubble.mine{
+  background: rgba(40, 110, 255, .22);
+  border-top-right-radius: 8px;
+  text-align:left;
+}
+
+/* ===== Table Wrap (Admin Export) ===== */
+.table-wrap{
+  overflow-x:auto;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+  background: rgba(10,16,30,.45);
+  padding:10px;
+}
+.table-wrap table{
+  width:100%;
+  border-collapse:collapse;
+  min-width: 860px;
+}
+.table-wrap th, .table-wrap td{
+  padding:10px 8px;
+  text-align:left;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  vertical-align:top;
+  font-size:12px;
+}
+.table-wrap th{
+  font-weight:850;
+  font-size:12px;
+  opacity:.9;
+}
+.table-name{
+  font-weight:900;
+  font-size:13px;
+}
+.table-code{
+  font-size:11px;
+  opacity:.75;
+  margin-top:2px;
+}
+/* ================================
+   Running Text (pesan_running)
+================================ */
+.runningBar{
+  width:100%;
+  border-radius:16px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  padding:10px 0;
+}
+
+.runningTrack{
+  display:inline-block;
+  white-space:nowrap;
+  will-change: transform;
+  padding-left:100%;
+}
+
+.runningText{
+  display:inline-block;
+  padding:0 18px;
+  font-weight:900;
+  letter-spacing:.2px;
+}
+
+@keyframes runningLeft {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-200%); }
+}
+
+@keyframes runningRight {
+  0%   { transform: translateX(-200%); }
+  100% { transform: translateX(0); }
+}
+
+.runningLeftAnim{
+  animation-name: runningLeft;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.runningRightAnim{
+  animation-name: runningRight;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes blinkText {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: .15; }
+}
+
+.runningBlink{
+  animation: blinkText 1s infinite;
+}
+/* ==========================
+   Pesan Bar (Marquee)
+   ========================== */
+
+.pesanBar {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(10,18,35,.55);
+}
+
+.pesanBarInner {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+  animation: pesanMarquee 12s linear infinite;
+  font-weight: 900;
+}
+
+/* arah default kiri->kanan / kanan->kiri nanti bisa diubah */
+@keyframes pesanMarquee {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-110%); }
+}
+
+/* mode kedap-kedip */
+.pesanBlink {
+  animation: pesanBlink 1s step-start infinite;
+}
+
+@keyframes pesanBlink {
+  50% { opacity: 0; }
+}
+
+/* ===== Pesan Marquee (Dashboard) ===== */
+.marqueeCard{ padding:0; overflow:hidden; border-radius:18px; }
+.marqueeWrap{
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,.06);
+  background: rgba(10,20,40,.55);
+  position:relative;
+  overflow:hidden;
+}
+.marqueeInner{
+  display:inline-block;
+  white-space:nowrap;
+  padding-left:100%;
+  animation: marquee-left var(--marquee-duration, 30s) linear infinite;
+  font-weight:800;
+  letter-spacing:.2px;
+}
+.marqueeWrap[data-dir="right"] .marqueeInner{
+  padding-left:0;
+  padding-right:100%;
+  animation: marquee-right var(--marquee-duration, 30s) linear infinite;
+}
+@keyframes marquee-left{
+  0%{ transform: translateX(0); }
+  100%{ transform: translateX(-100%); }
+}
+@keyframes marquee-right{
+  0%{ transform: translateX(0); }
+  100%{ transform: translateX(100%); }
+}
+.blink{
+  animation-name: marquee-left, blinkAnim !important;
+  animation-duration: var(--marquee-duration, 30s), 1s !important;
+  animation-iteration-count: infinite, infinite !important;
+  animation-timing-function: linear, steps(2,end) !important;
+}
+.marqueeWrap[data-dir="right"] .blink{
+  animation-name: marquee-right, blinkAnim !important;
+}
+@keyframes blinkAnim{
+  0%,49%{ opacity:1; }
+  50%,100%{ opacity:.25; }
+}
+
+/* Rainbow text */
+.text-rainbow{
+  background: linear-gradient(90deg, #ff3b3b, #ffb100, #5cff5c, #3ea8ff, #b45cff, #ff3bb8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+
+/* ===== AUTH UI UPGRADE (Login/Register) ===== */
+.auth-wrap{
+  min-height: 100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+.auth-card{
+  width: min(520px, 96vw);
+  border-radius:18px;
+  padding:18px;
+}
+.auth-title{
+  font-size:22px;
+  font-weight:950;
+  margin:0;
+}
+.auth-sub{
+  margin-top:6px;
+  font-size:14px;
+  opacity:.85;
+  line-height:1.35;
+}
+.auth-form{ margin-top:14px; }
+.auth-form .small{ font-size:13px; opacity:.9; }
+
+.auth-form input, 
+.auth-form select,
+.auth-form textarea{
+  font-size:16px;
+  padding:14px 14px;
+  border-radius:14px;
+}
+
+.auth-form button{
+  font-size:16px;
+  padding:14px 14px;
+  border-radius:14px;
+  font-weight:900;
+}
+
+.pw-row{ position:relative; }
+.pw-toggle{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform: translateY(-50%);
+  width:auto !important;
+  padding:10px 12px !important;
+  border-radius:12px !important;
+  font-size:14px !important;
+  opacity:.95;
+}
+
+.auth-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+.auth-actions button{ width:100%; }
+
+.auth-links{
+  margin-top:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.auth-links a{
+  font-size:14px;
+  text-decoration:none;
+  opacity:.9;
+}
+.auth-links a:hover{ opacity:1; }
+
+.auth-note{
+  margin-top:10px;
+  font-size:13px;
+  opacity:.85;
+  line-height:1.35;
+}
+
+@media (max-width:380px){
+  .auth-title{ font-size:20px; }
+  .auth-form input, .auth-form select{ font-size:15px; }
+}
+/* ================================
+   HOME DASHBOARD NEW LAYOUT
+================================ */
+
+/* Biar konten nggak ketutup tombol bawah */
+.pagePadBottom{
+  padding-bottom: 140px;
+}
+
+/* Pesan penting sticky / diam (tetap kelihatan saat scroll) */
+.stickyMessageCard{
+  position: sticky;
+  top: 128px; /* aman di bawah header+navbar */
+  z-index: 30;
+}
+
+/* Area scroll utama (riwayat + status mesin) */
+.homeScrollArea{
+  display: block;
+}
+
+/* Sticky bottom frosted glass */
+.frostedActions{
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(10, 20, 35, 0.55);
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Tombol bawah biar nggak "flat transparan" */
+.frostedActions button{
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+/* Tombol grid 2 kolom, turun jadi 1 kolom kalau layar kecil */
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+}
+
+@media (max-width: 520px){
+  .grid2{
+    grid-template-columns: 1fr;
+  }
+}
+.chatItem { display:flex; margin:8px 0; }
+.chatItem.me { justify-content:flex-end; }
+
+.chatBubble {
+  max-width:75%;
+  background:#1f2937;
+  padding:10px;
+  border-radius:12px;
+}
+
+.chatItem.me .chatBubble { background:#2563eb; }
+
+.chatName { font-size:12px; font-weight:700; opacity:.85; }
+.chatText { margin-top:4px; white-space:pre-wrap; }
+
+.chatMeta {
+  margin-top:6px;
+  font-size:11px;
+  opacity:.7;
+  display:flex;
+  justify-content:space-between;
+}
+
+.replyBox {
+  border-left:3px solid #4da8ff;
+  padding-left:6px;
+  margin-bottom:6px;
+  opacity:.9;
+}
+/* ===== RESET ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0b1220;
+  color: #e8eefc;
+  font-family: system-ui, sans-serif;
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* ===============================
+   CHAT BUBBLE – FIX ICON BALAS
+================================ */
+
+/* area meta bawah bubble */
+.bubbleMeta{
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  opacity: .75;
+}
+
+/* tombol balas → kecil & clean */
+.bubbleMeta button{
+  all: unset;                 /* 🔥 buang style button global */
+  cursor: pointer;
+
+  padding: 4px 8px;
+  border-radius: 999px;
+
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+
+  color: #7fb4ff;
+  background: rgba(255,255,255,.08);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: background .2s ease, transform .15s ease;
+}
+
+/* hover halus */
+.bubbleMeta button:hover{
+  background: rgba(59,130,246,.25);
+  transform: scale(1.05);
+}
+
+/* bubble sendiri */
+.bubble{
+  position: relative;
+  max-width: 78%;
+  padding: 12px 14px;
+  border-radius: 16px;
+}
+
+/* bubble kamu */
+.bubble.mine{
+  background: linear-gradient(135deg,#3b82f6,#2563eb);
+  color: #fff;
+}
+
+/* bubble orang lain */
+.bubble.other{
+  background: rgba(255,255,255,.08);
+}
+:root{
+  --radius: 16px;
+  --spacing: 12px;
+}
+
+/* dense mode */
+body.dense-ui button,
+body.dense-ui input{
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+/* effect switches */
+body.no-blur *{
+  backdrop-filter: none !important;
+}
+body.no-anim *{
+  animation: none !important;
+  transition: none !important;
+}
+/* ===============================
+   STICKY ACTION BUTTONS (DASHBOARD)
+   Glass • Fixed • Tidak ikut scroll
+================================ */
+
+.stickyActions{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+
+  padding: 10px 14px;
+  z-index: 999;
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  background: transparent;
+  backdrop-filter: none;
+
+  padding: 12px;
+
+  border-top: 0px solid rgba(255,255,255,0.12);
+}
+
+/* grid kanan kiri */
+.stickyActions .grid2{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* tombol lebih tinggi & empuk */
+.stickyActions button{
+  height: 54px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 16px;
+}
+
+/* secondary tetap jelas */
+.stickyActions button.secondary{
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+/* ===============================
+   SUPAYA KONTEN TIDAK KETUTUP
+================================ */
+.pagePadBottom{
+  padding-bottom: 90px; /* tinggi area tombol */
+}
+.glass{
+  background: rgba(20,30,50,.55);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.sticky-filter{
+  position: sticky;
+  top: calc(var(--topbar-h, 64px) + 10px);
+  z-index: 20;
+}
+
+.smallBtn{
+  margin-top:6px;
+  padding:6px 10px;
+  font-size:12px;
+  border-radius:10px;
+}
